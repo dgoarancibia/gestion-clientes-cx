@@ -1,4 +1,8 @@
+import { useAuth } from '../context/AuthContext'
+
 export default function LoginPage() {
+  const { login, authError } = useAuth()
+
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8F7F4' }}>
       <div
@@ -18,22 +22,25 @@ export default function LoginPage() {
           <p style={{ fontSize: 13, color: '#73726C' }}>Indumotora — Área Customer Experience</p>
         </div>
 
-        <a
-          href="/auth/google"
-          className="flex items-center gap-3 w-full justify-center rounded-lg px-4 py-2.5 transition-colors"
-          style={{
-            background: '#2C2C2A',
-            color: '#fff',
-            fontSize: 14,
-            fontWeight: 500,
-            textDecoration: 'none',
-          }}
+        {authError && (
+          <div
+            className="w-full text-center rounded-lg px-4 py-2"
+            style={{ background: '#F8D7DA', color: '#721C24', fontSize: 13, borderRadius: 8 }}
+          >
+            {authError}
+          </div>
+        )}
+
+        <button
+          onClick={login}
+          className="flex items-center gap-3 w-full justify-center rounded-lg px-4 py-2.5 transition-colors cursor-pointer"
+          style={{ background: '#2C2C2A', color: '#fff', fontSize: 14, fontWeight: 500, border: 'none' }}
           onMouseOver={e => e.currentTarget.style.background = '#444441'}
           onMouseOut={e => e.currentTarget.style.background = '#2C2C2A'}
         >
           <GoogleIcon />
           Ingresar con Google
-        </a>
+        </button>
 
         <p style={{ fontSize: 12, color: '#73726C', textAlign: 'center' }}>
           Acceso restringido — solo usuarios autorizados

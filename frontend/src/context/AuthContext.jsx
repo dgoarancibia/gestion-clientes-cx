@@ -1,25 +1,50 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import { auth, googleProvider, ALLOWED_EMAILS } from '../firebase'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
-    fetch('/api/me', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { setUser(data); setLoading(false) })
-      .catch(() => setLoading(false))
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser && ALLOWED_EMAILS.includes(firebaseUser.email)) {
+        setUser({
+          name: firebaseUser.displayName,
+          email: firebaseUser.email,
+          photo: firebaseUser.photoURL,
+        })
+        setAuthError(null)
+      } else if (firebaseUser) {
+        signOut(auth)
+        setAuthError('Acceso no autorizado. Este dashboard es de uso privado.')
+        setUser(null)
+      } else {
+        setUser(null)
+      }
+      setLoading(false)
+    })
+    return unsub
   }, [])
 
-  const logout = async () => {
-    await fetch('/auth/logout', { method: 'POST', credentials: 'include' })
-    setUser(null)
+  const login = async () => {
+    setAuthError(null)
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        setAuthError('Error al iniciar sesión. Intenta nuevamente.')
+      }
+    }
   }
 
+  const logout = () => signOut(auth)
+
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, loading, authError, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
