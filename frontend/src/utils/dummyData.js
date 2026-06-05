@@ -12,21 +12,16 @@ function addDays(date, days) {
 }
 function fmt(d) { return d.toISOString().split('T')[0] }
 
-export function generarDatosDummy() {
+function generarCasos(cantidad, baseDate, idOffset = 0) {
   const casos = []
-  const hoy = new Date('2026-06-05')
-
-  for (let i = 1; i <= 120; i++) {
-    const diasAtras = Math.floor(Math.random() * 60)
-    const fechaIngreso = addDays(hoy, -diasAtras)
+  for (let i = 1; i <= cantidad; i++) {
+    const diasAtras = Math.floor(Math.random() * 30)
+    const fechaIngreso = addDays(baseDate, -diasAtras)
     const estado = randomItem(estados)
     const diasResolucion = Math.floor(Math.random() * 12) + 1
     const fechaCierre = estado === 'cerrado' ? fmt(addDays(fechaIngreso, diasResolucion)) : null
-    const escalado = Math.random() < 0.18
-    const reabierto = estado === 'cerrado' && Math.random() < 0.08
-
     casos.push({
-      id_caso: `C-${String(i).padStart(3, '0')}`,
+      id_caso: `C-${String(i + idOffset).padStart(3, '0')}`,
       fecha_ingreso: fmt(fechaIngreso),
       fecha_cierre: fechaCierre,
       fecha_primera_respuesta: fmt(addDays(fechaIngreso, Math.random() < 0.5 ? 0 : 1)),
@@ -35,11 +30,19 @@ export function generarDatosDummy() {
       dealer: randomItem(dealers),
       tipo_reclamo: randomItem(tipos),
       ejecutiva: randomItem(ejecutivas),
-      escalado,
-      reabierto,
+      escalado: Math.random() < 0.18,
+      reabierto: estado === 'cerrado' && Math.random() < 0.08,
       contactos: Math.floor(Math.random() * 4) + 1,
     })
   }
+  return casos
+}
+
+export function generarDatosDummy() {
+  // Mes actual: junio 2026 — 120 casos
+  const casosActual = generarCasos(120, new Date('2026-06-05'), 0)
+  // Mes anterior: mayo 2026 — 98 casos (menos volumen, peor ART)
+  const casosAnterior = generarCasos(98, new Date('2026-05-01'), 200)
 
   const ventas = [
     { mes: '2026-05', marca: 'Kia', unidades_vendidas: 78 },
@@ -50,5 +53,5 @@ export function generarDatosDummy() {
     { mes: '2026-06', marca: 'Otras', unidades_vendidas: 31 },
   ]
 
-  return { casos, ventas }
+  return { casos: casosActual, casosAnterior, ventas }
 }

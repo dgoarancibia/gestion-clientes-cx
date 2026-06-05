@@ -28,12 +28,13 @@ function exportarCSV(casosFiltrados, kpis) {
 }
 
 export default function DashboardPage() {
-  const { casosCargados, setCasos, setVentas, casosFiltrados } = useData()
+  const { casosCargados, setCasos, setCasosAnterior, setVentas, casosFiltrados } = useData()
 
   useEffect(() => {
     if (!casosCargados) {
-      const { casos, ventas } = generarDatosDummy()
+      const { casos, casosAnterior, ventas } = generarDatosDummy()
       setCasos(casos)
+      setCasosAnterior(casosAnterior)
       setVentas(ventas)
     }
   }, [])

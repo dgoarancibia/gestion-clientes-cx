@@ -2,13 +2,19 @@ import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveCo
 import { useData } from '../context/DataContext'
 import { calcularKPIs, semaforoART, semaforoFRT, semaforoEscalamiento } from '../utils/kpis'
 import { useState } from 'react'
-import { HelpCircle } from 'lucide-react'
+import { HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 const COLORES = ['#A8D5C2', '#B5D4F4', '#CECBF6', '#FAC775', '#F4C5C5', '#C5E4F4']
 
+function delta(actual, anterior) {
+  if (!anterior || anterior === 0) return null
+  return Math.round(((actual - anterior) / anterior) * 100)
+}
+
 export default function DashboardMetricas() {
-  const { casosFiltrados } = useData()
+  const { casosFiltrados, casosAnteriorFiltrados } = useData()
   const kpis = calcularKPIs(casosFiltrados)
+  const kpisAnt = casosAnteriorFiltrados?.length ? calcularKPIs(casosAnteriorFiltrados) : null
 
   const marcaData = Object.entries(
     casosFiltrados.reduce((acc, c) => { acc[c.marca] = (acc[c.marca] || 0) + 1; return acc }, {})
@@ -31,33 +37,46 @@ export default function DashboardMetricas() {
   return (
     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Fila 1 — 6 KPIs uniformes */}
+      {/* Fila 1 — 6 KPIs con comparativa mes anterior */}
       <Section label="Resumen del período">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
           <KPICard label="Casos ingresados" value={kpis.total} sub="En el período"
-            tooltip="Total de casos recibidos, independiente de su estado." />
+            delta={delta(kpis.total, kpisAnt?.total)}
+            deltaInvert={false}
+            tooltip="Total de casos recibidos. Un alza puede indicar mayor actividad o problemas de calidad." />
           <KPICard label="Casos cerrados" value={kpis.cerrados}
             sub={`${kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0}% del total`}
-            tooltip="Casos con fecha de cierre en el período." />
+            delta={delta(kpis.cerrados, kpisAnt?.cerrados)}
+            deltaInvert={false}
+            tooltip="Casos con fecha de cierre. Alza es positiva — indica mayor resolución." />
           <KPICard label="Backlog activo" value={kpis.abiertos} sub="Sin fecha de cierre"
-            tooltip="Casos aún abiertos. Un backlog alto puede indicar cuellos de botella."
+            delta={delta(kpis.abiertos, kpisAnt?.abiertos)}
+            deltaInvert={true}
+            tooltip="Casos aún abiertos. Baja es positiva — menos acumulación pendiente."
             alert={kpis.abiertos > 20} />
-          <KPICard label="Reapertura" value={kpis.cerrados === 0 ? '—' : `${kpis.tasaReapertura}%`}
+          <KPICard label="Reapertura"
+            value={kpis.cerrados === 0 ? '—' : `${kpis.tasaReapertura}%`}
             sub={kpis.cerrados === 0 ? 'Sin cerrados' : 'Sobre cerrados'}
-            tooltip="% de casos cerrados que fueron reabiertos." />
+            delta={kpisAnt ? delta(kpis.tasaReapertura, kpisAnt.tasaReapertura) : null}
+            deltaInvert={true}
+            tooltip="% de casos reabiertos tras cierre. Baja es positiva." />
           <KPICard label="ART" value={kpis.art} sub="días hábiles"
-            tooltip="Promedio de días hábiles entre ingreso y cierre. Meta: ≤ 5 días."
+            delta={kpisAnt ? delta(kpis.art, kpisAnt.art) : null}
+            deltaInvert={true}
+            tooltip="Promedio de días hábiles entre ingreso y cierre. Meta: ≤ 5 días. Baja es positiva."
             badge={{ ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 8 ? 'En riesgo' : 'Fuera SLA' }} />
           <KPICard label="FRT" value={kpis.frt ?? '—'} sub={kpis.frt ? 'horas' : 'Sin datos'}
-            tooltip="Promedio de horas hasta la primera respuesta. Meta: ≤ 24 hrs."
+            delta={kpisAnt?.frt && kpis.frt ? delta(kpis.frt, kpisAnt.frt) : null}
+            deltaInvert={true}
+            tooltip="Promedio de horas hasta la primera respuesta. Meta: ≤ 24 hrs. Baja es positiva."
             badge={kpis.frt ? { ...semaforoFRT(kpis.frt), label: kpis.frt <= 24 ? 'En SLA' : kpis.frt <= 48 ? 'En riesgo' : 'Fuera SLA' } : null} />
         </div>
       </Section>
 
-      {/* Fila 2 — Marca + Escalamiento + Tipos */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.7fr 1.2fr', gap: 16 }}>
+      {/* Fila 2 — Marca + Escalamiento + Tipos (misma fila, mismo nivel) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 1.2fr', gap: 12 }}>
         <Card title="Distribución por marca" tooltip="Proporción de casos por marca en el período.">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
             {marcaData.map((m, i) => (
               <div key={m.marca} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 12, color: '#4A4A46', width: 68, flexShrink: 0 }}>{m.marca}</span>
@@ -71,10 +90,11 @@ export default function DashboardMetricas() {
           </div>
         </Card>
 
-        <Card title="Escalamiento" tooltip="Casos que requirieron escalar. Meta: ≤ 15%.">
-          <div style={{ marginTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 8 }}>
-              <span style={{ fontSize: 34, fontWeight: 700, color: '#1C1C1A', lineHeight: 1 }}>{kpis.tasaEscalamiento}%</span>
+        <Card title="Escalamiento" tooltip="Casos escalados a nivel superior. Meta: ≤ 15%.">
+          <div style={{ marginTop: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 32, fontWeight: 700, color: '#1C1C1A', lineHeight: 1 }}>{kpis.tasaEscalamiento}%</span>
+              {kpisAnt && <DeltaBadge value={delta(kpis.tasaEscalamiento, kpisAnt.tasaEscalamiento)} invert={true} />}
             </div>
             <p style={{ fontSize: 11, color: '#9B9B96', marginBottom: 10 }}>{kpis.escalados} casos escalados</p>
             <Badge {...semaforoEscalamiento(kpis.tasaEscalamiento)}>
@@ -110,8 +130,8 @@ export default function DashboardMetricas() {
       </div>
 
       {/* Fila 3 — Aging */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 16 }}>
-        <Card title="Aging — casos abiertos" tooltip="Distribución por días sin cierre. +10 días requiere atención inmediata.">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 12 }}>
+        <Card title="Aging — casos abiertos" tooltip="+10 días sin cierre requiere atención inmediata.">
           {agingData.every(d => d.cantidad === 0)
             ? <Empty text="Sin casos abiertos" good />
             : <ResponsiveContainer width="100%" height={148}>
@@ -196,12 +216,11 @@ export default function DashboardMetricas() {
           El ART individual puede variar según la complejidad de los casos asignados.
         </p>
       </Card>
-
     </div>
   )
 }
 
-/* ── Componentes ── */
+/* ── Componentes base ── */
 
 function Section({ label, children }) {
   return (
@@ -212,7 +231,7 @@ function Section({ label, children }) {
   )
 }
 
-function KPICard({ label, value, sub, tooltip, badge, alert }) {
+function KPICard({ label, value, sub, tooltip, badge, alert, delta: d, deltaInvert }) {
   const [show, setShow] = useState(false)
   return (
     <div style={{
@@ -220,10 +239,9 @@ function KPICard({ label, value, sub, tooltip, badge, alert }) {
       border: '1px solid #EBEBEB',
       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
       padding: '14px 16px',
-      position: 'relative',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-        <p style={{ fontSize: 11, color: '#9B9B96', lineHeight: 1.3, paddingRight: 16 }}>{label}</p>
+        <p style={{ fontSize: 11, color: '#9B9B96', lineHeight: 1.3, paddingRight: 8 }}>{label}</p>
         {tooltip && (
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <HelpCircle size={12} color="#D0D0CC" style={{ cursor: 'default' }}
@@ -232,12 +250,31 @@ function KPICard({ label, value, sub, tooltip, badge, alert }) {
           </div>
         )}
       </div>
-      <p style={{ fontSize: 28, fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1, marginBottom: 4 }}>{value}</p>
-      {badge
-        ? <Badge bg={badge.bg} color={badge.color}>{badge.label}</Badge>
-        : <p style={{ fontSize: 11, color: '#9B9B96' }}>{sub}</p>
-      }
+      <p style={{ fontSize: 28, fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1, marginBottom: 6 }}>{value}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {badge
+          ? <Badge bg={badge.bg} color={badge.color}>{badge.label}</Badge>
+          : <p style={{ fontSize: 11, color: '#9B9B96' }}>{sub}</p>
+        }
+        {d !== null && d !== undefined && <DeltaBadge value={d} invert={deltaInvert} />}
+      </div>
     </div>
+  )
+}
+
+function DeltaBadge({ value, invert }) {
+  if (value === null || value === undefined) return null
+  const positive = invert ? value < 0 : value > 0
+  const neutral = value === 0
+  const color = neutral ? '#9B9B96' : positive ? '#155724' : '#721C24'
+  const bg = neutral ? '#F0F0EE' : positive ? '#D4EDDA' : '#F8D7DA'
+  const Icon = neutral ? Minus : positive ? TrendingDown : TrendingUp
+  const absVal = Math.abs(value)
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, background: bg, color, borderRadius: 20, padding: '2px 7px' }}>
+      <Icon size={10} />
+      {absVal}%
+    </span>
   )
 }
 

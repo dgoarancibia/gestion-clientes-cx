@@ -4,6 +4,7 @@ const DataContext = createContext(null)
 
 export function DataProvider({ children }) {
   const [casos, setCasos] = useState([])
+  const [casosAnterior, setCasosAnterior] = useState([])
   const [ventas, setVentas] = useState([])
   const [periodoDesde, setPeriodoDesde] = useState(null)
   const [periodoHasta, setPeriodoHasta] = useState(null)
@@ -24,15 +25,23 @@ export function DataProvider({ children }) {
     })
   }, [casos, periodoDesde, periodoHasta, marcaActiva])
 
+  const casosAnteriorFiltrados = useMemo(() => {
+    return casosAnterior.filter(c =>
+      marcaActiva === 'Todas' || c.marca === marcaActiva
+    )
+  }, [casosAnterior, marcaActiva])
+
   return (
     <DataContext.Provider value={{
       casos, setCasos,
+      casosAnterior, setCasosAnterior,
       ventas, setVentas,
       periodoDesde, setPeriodoDesde,
       periodoHasta, setPeriodoHasta,
       marcaActiva, setMarcaActiva,
       marcas,
       casosFiltrados,
+      casosAnteriorFiltrados,
       casosCargados: casos.length > 0,
       ventasCargadas: ventas.length > 0,
     }}>
