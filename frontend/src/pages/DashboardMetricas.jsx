@@ -11,6 +11,14 @@ export default function DashboardMetricas() {
 
   const tipoPieData = Object.entries(kpis.porTipo).map(([name, value]) => ({ name, value }))
 
+  const marcaData = Object.entries(
+    casosFiltrados.reduce((acc, c) => { acc[c.marca] = (acc[c.marca] || 0) + 1; return acc }, {})
+  ).map(([marca, cantidad]) => ({
+    marca,
+    cantidad,
+    pct: casosFiltrados.length ? Math.round(cantidad / casosFiltrados.length * 100) : 0,
+  })).sort((a, b) => b.cantidad - a.cantidad)
+
   const agingData = [
     { rango: '0–2 días', cantidad: kpis.aging['0-2'], fill: '#D4EDDA' },
     { rango: '3–5 días', cantidad: kpis.aging['3-5'], fill: '#FFF3CD' },
@@ -22,7 +30,7 @@ export default function DashboardMetricas() {
     <div className="px-6 py-6" style={{ maxWidth: '100%' }}>
 
       {/* KPIs principales — fila única */}
-      <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+      <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
         <KPICard titulo="Casos ingresados" valor={kpis.total} subtitulo="En el período"
           tooltip="Total de casos recibidos en el período seleccionado, independiente de su estado." />
         <KPICard titulo="Casos cerrados" valor={kpis.cerrados} subtitulo={`${kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0}% del total`}
@@ -46,6 +54,33 @@ export default function DashboardMetricas() {
           subtitulo={kpis.frt === null ? 'Sin datos' : null}
           tooltip="First Response Time: tiempo promedio en horas desde que ingresa un caso hasta la primera respuesta al cliente. Meta: ≤ 24 hrs."
         />
+      </div>
+
+      {/* Distribución por marca */}
+      <div style={{
+        background: '#FFFFFF', borderRadius: 12, border: '0.5px solid #E8E6E0',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '16px 24px', marginBottom: 24,
+      }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+          <p style={{ fontSize: 12, color: '#73726C' }}>Casos por marca</p>
+          <span style={{ fontSize: 11, color: '#73726C' }}>{casosFiltrados.length} casos totales</span>
+        </div>
+        <div className="flex flex-col gap-2">
+          {marcaData.map((m, i) => (
+            <div key={m.marca} className="flex items-center gap-3">
+              <span style={{ fontSize: 13, color: '#2C2C2A', width: 80, flexShrink: 0 }}>{m.marca}</span>
+              <div style={{ flex: 1, background: '#F3F2EE', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                <div style={{
+                  width: `${m.pct}%`, height: '100%', borderRadius: 4,
+                  background: COLORES_TIPO[i % COLORES_TIPO.length],
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A', width: 36, textAlign: 'right' }}>{m.pct}%</span>
+              <span style={{ fontSize: 12, color: '#73726C', width: 52, textAlign: 'right' }}>{m.cantidad} casos</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Sección: Calidad + Distribución por tipo */}
