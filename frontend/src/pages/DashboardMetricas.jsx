@@ -12,7 +12,7 @@ function delta(actual, anterior) {
 }
 
 // Cambia a false para ver variante C
-const VARIANTE_A = true
+const VARIANTE_A = false
 
 export default function DashboardMetricas() {
   const { casosFiltrados, casosAnteriorFiltrados } = useData()
@@ -78,58 +78,55 @@ export default function DashboardMetricas() {
         ))}
       </div>
 
-      {/* Fila 2 — Marca + Tipos dona */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12 }}>
+      {/* Fila 2 — Marca + Tipos + Aging (3 columnas iguales) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
         <Card title="Distribución por marca">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
             {marcaData.map((m, i) => (
-              <div key={m.marca} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 12, color: '#4A4A46', width: 68, flexShrink: 0 }}>{m.marca}</span>
-                <div style={{ flex: 1, background: '#F0F0EE', borderRadius: 4, height: 7, overflow: 'hidden' }}>
+              <div key={m.marca} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: '#4A4A46', width: 60, flexShrink: 0 }}>{m.marca}</span>
+                <div style={{ flex: 1, background: '#F0F0EE', borderRadius: 4, height: 6, overflow: 'hidden' }}>
                   <div style={{ width: `${m.pct}%`, height: '100%', borderRadius: 4, background: COLORES[i % COLORES.length], transition: 'width 0.4s ease' }} />
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#1C1C1A', width: 32, textAlign: 'right' }}>{m.pct}%</span>
-                <span style={{ fontSize: 11, color: '#9B9B96', width: 48, textAlign: 'right' }}>{m.cantidad} casos</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#1C1C1A', width: 30, textAlign: 'right' }}>{m.pct}%</span>
+                <span style={{ fontSize: 10, color: '#9B9B96', width: 44, textAlign: 'right' }}>{m.cantidad} casos</span>
               </div>
             ))}
           </div>
         </Card>
 
         <Card title="Tipos de reclamo">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-            <ResponsiveContainer width={100} height={100}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <ResponsiveContainer width={90} height={90}>
               <PieChart>
-                <Pie data={tipoPieData} cx={46} cy={46} innerRadius={28} outerRadius={46} dataKey="value" paddingAngle={2}>
+                <Pie data={tipoPieData} cx={42} cy={42} innerRadius={24} outerRadius={40} dataKey="value" paddingAngle={2}>
                   {tipoPieData.map((_, i) => <Cell key={i} fill={COLORES[i % COLORES.length]} />)}
                 </Pie>
                 <Tooltip formatter={(v, n) => [`${v} casos`, n]} />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
               {tipoPieData.map((d, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: 2, background: COLORES[i % COLORES.length], flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: '#4A4A46', flex: 1, textTransform: 'capitalize' }}>{d.name}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#1C1C1A' }}>{d.value}</span>
-                  <span style={{ fontSize: 10, color: '#9B9B96', width: 28, textAlign: 'right' }}>{Math.round(d.value / kpis.total * 100)}%</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: 2, background: COLORES[i % COLORES.length], flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, color: '#4A4A46', flex: 1, textTransform: 'capitalize' }}>{d.name}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#1C1C1A' }}>{d.value}</span>
+                  <span style={{ fontSize: 10, color: '#9B9B96', width: 24, textAlign: 'right' }}>{Math.round(d.value / kpis.total * 100)}%</span>
                 </div>
               ))}
             </div>
           </div>
         </Card>
-      </div>
 
-      {/* Fila 3 — Aging */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 12 }}>
         <Card title="Aging — casos abiertos" tooltip="+10 días sin cierre requiere atención inmediata.">
           {agingData.every(d => d.cantidad === 0)
             ? <Empty text="Sin casos abiertos" good />
-            : <ResponsiveContainer width="100%" height={148}>
-                <BarChart data={agingData} layout="vertical" margin={{ left: 4, right: 24, top: 8, bottom: 0 }}>
+            : <ResponsiveContainer width="100%" height={130}>
+                <BarChart data={agingData} layout="vertical" margin={{ left: 4, right: 20, top: 8, bottom: 0 }}>
                   <CartesianGrid horizontal={false} stroke="#F0F0EE" />
-                  <XAxis type="number" tick={{ fontSize: 10, fill: '#9B9B96' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="rango" tick={{ fontSize: 11, fill: '#4A4A46' }} axisLine={false} tickLine={false} width={64} />
-                  <Tooltip formatter={v => [`${v} casos`]} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #EBEBEB' }} />
+                  <XAxis type="number" tick={{ fontSize: 9, fill: '#9B9B96' }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="rango" tick={{ fontSize: 10, fill: '#4A4A46' }} axisLine={false} tickLine={false} width={58} />
+                  <Tooltip formatter={v => [`${v} casos`]} contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EBEBEB' }} />
                   <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
                     {agingData.map((d, i) => <Cell key={i} fill={d.fill} />)}
                   </Bar>
@@ -137,28 +134,30 @@ export default function DashboardMetricas() {
               </ResponsiveContainer>
           }
         </Card>
+      </div>
 
+      {/* Fila 3 — Casos críticos + Performance equipo */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: 12 }}>
         <Card title={`Casos críticos — +10 días (${kpis.aging['+10'].length})`}>
           {kpis.aging['+10'].length === 0
-            ? <Empty text="Sin casos críticos en el período" good />
-            : <div style={{ overflowY: 'auto', maxHeight: 168, marginTop: 8 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            ? <Empty text="Sin casos críticos" good />
+            : <div style={{ overflowY: 'auto', maxHeight: 200, marginTop: 8 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead style={{ position: 'sticky', top: 0 }}>
                     <tr style={{ background: '#F7F7F5' }}>
-                      {['ID', 'Ingreso', 'Tipo', 'Ejecutiva', 'Días'].map(h => (
-                        <th key={h} style={{ textAlign: 'left', padding: '5px 10px', fontWeight: 500, color: '#6B6B67', fontSize: 11 }}>{h}</th>
+                      {['ID', 'Tipo', 'Ejecutiva', 'Días'].map(h => (
+                        <th key={h} style={{ textAlign: 'left', padding: '5px 10px', fontWeight: 500, color: '#6B6B67', fontSize: 10 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {kpis.aging['+10'].sort((a, b) => b.dias - a.dias).map((c, i) => (
                       <tr key={c.id_caso} style={{ background: i % 2 === 0 ? '#FFFFFF' : '#FAFAF9' }}>
-                        <td style={{ padding: '5px 10px', color: '#1C1C1A', fontWeight: 500 }}>{c.id_caso}</td>
-                        <td style={{ padding: '5px 10px', color: '#6B6B67' }}>{c.fecha_ingreso}</td>
-                        <td style={{ padding: '5px 10px', color: '#6B6B67', textTransform: 'capitalize' }}>{c.tipo_reclamo}</td>
-                        <td style={{ padding: '5px 10px', color: '#6B6B67' }}>{c.ejecutiva}</td>
-                        <td style={{ padding: '5px 10px' }}>
-                          <span style={{ background: '#F8D7DA', color: '#721C24', borderRadius: 20, padding: '2px 8px', fontWeight: 600, fontSize: 11 }}>{c.dias}</span>
+                        <td style={{ padding: '4px 10px', color: '#1C1C1A', fontWeight: 500 }}>{c.id_caso}</td>
+                        <td style={{ padding: '4px 10px', color: '#6B6B67', textTransform: 'capitalize' }}>{c.tipo_reclamo}</td>
+                        <td style={{ padding: '4px 10px', color: '#6B6B67' }}>{c.ejecutiva}</td>
+                        <td style={{ padding: '4px 10px' }}>
+                          <span style={{ background: '#F8D7DA', color: '#721C24', borderRadius: 20, padding: '1px 7px', fontWeight: 600, fontSize: 10 }}>{c.dias}</span>
                         </td>
                       </tr>
                     ))}
@@ -167,10 +166,9 @@ export default function DashboardMetricas() {
               </div>
           }
         </Card>
-      </div>
 
-      {/* Fila 4 — Performance equipo */}
-      <Card title="Performance del equipo" subtitle="ART coloreado vs. promedio del equipo">
+        {/* Performance equipo — misma fila 3 */}
+        <Card title="Performance del equipo" subtitle="ART coloreado vs. promedio del equipo">
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginTop: 8 }}>
           <thead>
             <tr style={{ background: '#F7F7F5' }}>
@@ -204,6 +202,7 @@ export default function DashboardMetricas() {
         </table>
         <p style={{ fontSize: 11, color: '#9B9B96', marginTop: 8 }}>El ART individual puede variar según la complejidad de los casos asignados.</p>
       </Card>
+      </div>
     </div>
   )
 }
