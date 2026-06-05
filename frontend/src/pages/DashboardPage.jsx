@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useData } from '../context/DataContext'
 import { generarDatosDummy } from '../utils/dummyData'
-import Header from '../components/Header'
-import BienvenidaPage from './BienvenidaPage'
+import Sidebar from '../components/Sidebar'
+import TopBar from '../components/TopBar'
 import DashboardMetricas from './DashboardMetricas'
 
 export default function DashboardPage() {
@@ -17,11 +17,14 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="min-h-screen" style={{ background: '#F8F7F4' }}>
-      <Header />
-      <main style={{ paddingTop: 56 }}>
-        <DashboardMetricas />
-      </main>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F5F3' }}>
+      <Sidebar />
+      <div style={{ marginLeft: 220, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <TopBar title="Reclamos" subtitle="Análisis de casos del período seleccionado" />
+        <main style={{ paddingTop: 56, overflowY: 'auto' }}>
+          <DashboardMetricas />
+        </main>
+      </div>
     </div>
   )
 }
