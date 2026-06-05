@@ -11,6 +11,9 @@ function delta(actual, anterior) {
   return Math.round(((actual - anterior) / anterior) * 100)
 }
 
+// Cambia a false para ver variante C
+const VARIANTE_A = true
+
 export default function DashboardMetricas() {
   const { casosFiltrados, casosAnteriorFiltrados } = useData()
   const kpis = calcularKPIs(casosFiltrados)
@@ -34,48 +37,50 @@ export default function DashboardMetricas() {
     { rango: '+10 días', cantidad: kpis.aging['+10'].length, fill: '#F8D7DA' },
   ]
 
+  const KPI = VARIANTE_A ? KPICardA : KPICardC
+
+  const kpisData = [
+    { label: 'Casos ingresados', value: kpis.total, sub: 'En el período', d: delta(kpis.total, kpisAnt?.total), inv: false, max: 200,
+      tooltip: 'Total de casos recibidos. Un alza puede indicar mayor actividad o problemas de calidad.' },
+    { label: 'Casos cerrados', value: kpis.cerrados, sub: `${kpis.total ? Math.round(kpis.cerrados/kpis.total*100) : 0}% del total`, d: delta(kpis.cerrados, kpisAnt?.cerrados), inv: false, max: 200,
+      tooltip: 'Casos con fecha de cierre. Alza es positiva.' },
+    { label: 'Backlog activo', value: kpis.abiertos, sub: 'Sin fecha de cierre', d: delta(kpis.abiertos, kpisAnt?.abiertos), inv: true, max: 50, alert: kpis.abiertos > 20,
+      tooltip: 'Casos aún abiertos. Baja es positiva.' },
+    { label: 'Reapertura', value: kpis.cerrados === 0 ? '—' : `${kpis.tasaReapertura}%`, sub: 'Sobre cerrados', d: kpisAnt ? delta(kpis.tasaReapertura, kpisAnt.tasaReapertura) : null, inv: true, max: 20,
+      tooltip: '% de casos reabiertos tras cierre. Baja es positiva.' },
+    { label: 'ART', value: kpis.art, sub: 'días hábiles', d: kpisAnt ? delta(kpis.art, kpisAnt.art) : null, inv: true, max: 10,
+      badge: { ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 8 ? 'En riesgo' : 'Fuera SLA' },
+      tooltip: 'Promedio días hábiles entre ingreso y cierre. Meta: ≤ 5 días.' },
+    { label: 'FRT', value: kpis.frt ?? '—', sub: kpis.frt ? 'horas' : 'Sin datos', d: kpisAnt?.frt && kpis.frt ? delta(kpis.frt, kpisAnt.frt) : null, inv: true, max: 48,
+      badge: kpis.frt ? { ...semaforoFRT(kpis.frt), label: kpis.frt <= 24 ? 'En SLA' : kpis.frt <= 48 ? 'En riesgo' : 'Fuera SLA' } : null,
+      tooltip: 'Promedio horas hasta primera respuesta. Meta: ≤ 24 hrs.' },
+    { label: 'Escalamiento', value: `${kpis.tasaEscalamiento}%`, sub: `${kpis.escalados} casos`, d: kpisAnt ? delta(kpis.tasaEscalamiento, kpisAnt.tasaEscalamiento) : null, inv: true, max: 30,
+      badge: { ...semaforoEscalamiento(kpis.tasaEscalamiento), label: kpis.tasaEscalamiento <= 15 ? 'Normal' : kpis.tasaEscalamiento <= 25 ? 'Elevado' : 'Crítico' },
+      tooltip: 'Casos escalados a nivel superior. Meta: ≤ 15%.' },
+    { label: 'Tipos de reclamo', value: tipoPieData[0]?.name ?? '—', sub: `Líder: ${tipoPieData[0]?.value ?? 0} casos`, d: null, inv: false, max: null,
+      tooltip: 'Tipo de reclamo más frecuente en el período.' },
+  ]
+
   return (
     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Fila 1 — 6 KPIs con comparativa mes anterior */}
-      <Section label="Resumen del período">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 180px))', gap: 12 }}>
-          <KPICard label="Casos ingresados" value={kpis.total} sub="En el período"
-            delta={delta(kpis.total, kpisAnt?.total)}
-            deltaInvert={false}
-            tooltip="Total de casos recibidos. Un alza puede indicar mayor actividad o problemas de calidad." />
-          <KPICard label="Casos cerrados" value={kpis.cerrados}
-            sub={`${kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0}% del total`}
-            delta={delta(kpis.cerrados, kpisAnt?.cerrados)}
-            deltaInvert={false}
-            tooltip="Casos con fecha de cierre. Alza es positiva — indica mayor resolución." />
-          <KPICard label="Backlog activo" value={kpis.abiertos} sub="Sin fecha de cierre"
-            delta={delta(kpis.abiertos, kpisAnt?.abiertos)}
-            deltaInvert={true}
-            tooltip="Casos aún abiertos. Baja es positiva — menos acumulación pendiente."
-            alert={kpis.abiertos > 20} />
-          <KPICard label="Reapertura"
-            value={kpis.cerrados === 0 ? '—' : `${kpis.tasaReapertura}%`}
-            sub={kpis.cerrados === 0 ? 'Sin cerrados' : 'Sobre cerrados'}
-            delta={kpisAnt ? delta(kpis.tasaReapertura, kpisAnt.tasaReapertura) : null}
-            deltaInvert={true}
-            tooltip="% de casos reabiertos tras cierre. Baja es positiva." />
-          <KPICard label="ART" value={kpis.art} sub="días hábiles"
-            delta={kpisAnt ? delta(kpis.art, kpisAnt.art) : null}
-            deltaInvert={true}
-            tooltip="Promedio de días hábiles entre ingreso y cierre. Meta: ≤ 5 días. Baja es positiva."
-            badge={{ ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 8 ? 'En riesgo' : 'Fuera SLA' }} />
-          <KPICard label="FRT" value={kpis.frt ?? '—'} sub={kpis.frt ? 'horas' : 'Sin datos'}
-            delta={kpisAnt?.frt && kpis.frt ? delta(kpis.frt, kpisAnt.frt) : null}
-            deltaInvert={true}
-            tooltip="Promedio de horas hasta la primera respuesta. Meta: ≤ 24 hrs. Baja es positiva."
-            badge={kpis.frt ? { ...semaforoFRT(kpis.frt), label: kpis.frt <= 24 ? 'En SLA' : kpis.frt <= 48 ? 'En riesgo' : 'Fuera SLA' } : null} />
-        </div>
-      </Section>
+      {/* Preview de variante activa */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: -4 }}>
+        <span style={{ fontSize: 11, color: '#9B9B96', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          Variante {VARIANTE_A ? 'A — Minimalista' : 'C — Con barra de progreso'}
+        </span>
+      </div>
 
-      {/* Fila 2 — Marca + Escalamiento + Tipos (misma fila, mismo nivel) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 1.2fr', gap: 12 }}>
-        <Card title="Distribución por marca" tooltip="Proporción de casos por marca en el período.">
+      {/* Fila 1 — 8 KPIs incluyendo escalamiento y tipo */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 160px))', gap: 10 }}>
+        {kpisData.map((k, i) => (
+          <KPI key={i} {...k} delta={k.d} deltaInvert={k.inv} />
+        ))}
+      </div>
+
+      {/* Fila 2 — Marca + Tipos dona */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 12 }}>
+        <Card title="Distribución por marca">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
             {marcaData.map((m, i) => (
               <div key={m.marca} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -87,19 +92,6 @@ export default function DashboardMetricas() {
                 <span style={{ fontSize: 11, color: '#9B9B96', width: 48, textAlign: 'right' }}>{m.cantidad} casos</span>
               </div>
             ))}
-          </div>
-        </Card>
-
-        <Card title="Escalamiento" tooltip="Casos escalados a nivel superior. Meta: ≤ 15%.">
-          <div style={{ marginTop: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: 32, fontWeight: 700, color: '#1C1C1A', lineHeight: 1 }}>{kpis.tasaEscalamiento}%</span>
-              {kpisAnt && <DeltaBadge value={delta(kpis.tasaEscalamiento, kpisAnt.tasaEscalamiento)} invert={true} />}
-            </div>
-            <p style={{ fontSize: 11, color: '#9B9B96', marginBottom: 10 }}>{kpis.escalados} casos escalados</p>
-            <Badge {...semaforoEscalamiento(kpis.tasaEscalamiento)}>
-              {kpis.tasaEscalamiento <= 15 ? 'Normal' : kpis.tasaEscalamiento <= 25 ? 'Elevado' : 'Crítico'}
-            </Badge>
           </div>
         </Card>
 
@@ -119,9 +111,7 @@ export default function DashboardMetricas() {
                   <div style={{ width: 7, height: 7, borderRadius: 2, background: COLORES[i % COLORES.length], flexShrink: 0 }} />
                   <span style={{ fontSize: 11, color: '#4A4A46', flex: 1, textTransform: 'capitalize' }}>{d.name}</span>
                   <span style={{ fontSize: 11, fontWeight: 600, color: '#1C1C1A' }}>{d.value}</span>
-                  <span style={{ fontSize: 10, color: '#9B9B96', width: 28, textAlign: 'right' }}>
-                    {Math.round(d.value / kpis.total * 100)}%
-                  </span>
+                  <span style={{ fontSize: 10, color: '#9B9B96', width: 28, textAlign: 'right' }}>{Math.round(d.value / kpis.total * 100)}%</span>
                 </div>
               ))}
             </div>
@@ -212,40 +202,24 @@ export default function DashboardMetricas() {
             })}
           </tbody>
         </table>
-        <p style={{ fontSize: 11, color: '#9B9B96', marginTop: 8 }}>
-          El ART individual puede variar según la complejidad de los casos asignados.
-        </p>
+        <p style={{ fontSize: 11, color: '#9B9B96', marginTop: 8 }}>El ART individual puede variar según la complejidad de los casos asignados.</p>
       </Card>
     </div>
   )
 }
 
-/* ── Componentes base ── */
-
-function Section({ label, children }) {
-  return (
-    <div>
-      <p style={{ fontSize: 11, fontWeight: 600, color: '#9B9B96', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>{label}</p>
-      {children}
-    </div>
-  )
-}
-
-function KPICard({ label, value, sub, tooltip, badge, alert, delta: d, deltaInvert }) {
+/* ── Variante A: Minimalista ── */
+function KPICardA({ label, value, sub, tooltip, badge, alert, delta: d, deltaInvert }) {
   const [show, setShow] = useState(false)
   return (
     <div style={{
       background: '#FFFFFF', borderRadius: 10,
       border: '1px solid #EBEBEB',
       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      padding: '14px 14px 12px',
-      display: 'flex', flexDirection: 'column',
+      padding: '12px 13px',
     }}>
-      {/* Fila 1: período label + tooltip */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontSize: 10, color: '#B0B0AA', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Mes actual
-        </span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+        <span style={{ fontSize: 10, color: '#B0B0AA', fontWeight: 500 }}>{label}</span>
         {tooltip && (
           <div style={{ position: 'relative' }}>
             <HelpCircle size={11} color="#D8D8D4" style={{ cursor: 'default' }}
@@ -254,47 +228,63 @@ function KPICard({ label, value, sub, tooltip, badge, alert, delta: d, deltaInve
           </div>
         )}
       </div>
-      {/* Fila 2: nombre del KPI */}
-      <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1A', lineHeight: 1.2, marginBottom: 6 }}>{label}</p>
-      {/* Fila 3: valor grande */}
-      <p style={{ fontSize: 26, fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1, marginBottom: 10 }}>{value}</p>
-      {/* Fila 4: footer — sub/badge izquierda, delta derecha */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+      <p style={{ fontSize: 26, fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1, margin: '6px 0 8px' }}>{value}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {badge
           ? <Badge bg={badge.bg} color={badge.color}>{badge.label}</Badge>
-          : <span style={{ fontSize: 11, color: '#9B9B96' }}>{sub}</span>
+          : <span style={{ fontSize: 10, color: '#9B9B96' }}>{sub}</span>
         }
-        {d !== null && d !== undefined && <DeltaBadge value={d} invert={deltaInvert} />}
+        {d != null && <DeltaBadge value={d} invert={deltaInvert} />}
       </div>
     </div>
   )
 }
 
-function DeltaBadge({ value, invert }) {
-  if (value === null || value === undefined) return null
-  const positive = invert ? value < 0 : value > 0
-  const neutral = value === 0
-  const color = neutral ? '#9B9B96' : positive ? '#155724' : '#721C24'
-  const bg = neutral ? '#F0F0EE' : positive ? '#D4EDDA' : '#F8D7DA'
-  const Icon = neutral ? Minus : positive ? TrendingDown : TrendingUp
-  const absVal = Math.abs(value)
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, background: bg, color, borderRadius: 20, padding: '2px 7px' }}>
-      <Icon size={10} />
-      {absVal}%
-    </span>
-  )
-}
-
-function Card({ title, subtitle, tooltip, children }) {
+/* ── Variante C: Con barra de progreso ── */
+function KPICardC({ label, value, sub, tooltip, badge, alert, delta: d, deltaInvert, max }) {
   const [show, setShow] = useState(false)
+  const numVal = parseFloat(String(value).replace('%', ''))
+  const pct = max && !isNaN(numVal) ? Math.min((numVal / max) * 100, 100) : null
+  const barColor = alert ? '#F8D7DA' : badge ? badge.bg : '#B5D4F4'
   return (
     <div style={{
       background: '#FFFFFF', borderRadius: 10,
       border: '1px solid #EBEBEB',
       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      padding: '16px 18px',
+      padding: '12px 13px',
     }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+        <span style={{ fontSize: 10, color: '#B0B0AA', fontWeight: 500 }}>{label}</span>
+        {tooltip && (
+          <div style={{ position: 'relative' }}>
+            <HelpCircle size={11} color="#D8D8D4" style={{ cursor: 'default' }}
+              onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)} />
+            {show && <Tip>{tooltip}</Tip>}
+          </div>
+        )}
+      </div>
+      <p style={{ fontSize: 26, fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1, margin: '6px 0 6px' }}>{value}</p>
+      {pct !== null && (
+        <div style={{ background: '#F0F0EE', borderRadius: 4, height: 4, marginBottom: 8, overflow: 'hidden' }}>
+          <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: barColor, transition: 'width 0.4s ease' }} />
+        </div>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {badge
+          ? <Badge bg={badge.bg} color={badge.color}>{badge.label}</Badge>
+          : <span style={{ fontSize: 10, color: '#9B9B96' }}>{sub}</span>
+        }
+        {d != null && <DeltaBadge value={d} invert={deltaInvert} />}
+      </div>
+    </div>
+  )
+}
+
+/* ── Componentes compartidos ── */
+function Card({ title, subtitle, tooltip, children }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div style={{ background: '#FFFFFF', borderRadius: 10, border: '1px solid #EBEBEB', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', padding: '16px 18px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 2 }}>
         <div>
           <p style={{ fontSize: 12, fontWeight: 600, color: '#1C1C1A' }}>{title}</p>
@@ -313,18 +303,29 @@ function Card({ title, subtitle, tooltip, children }) {
   )
 }
 
+function DeltaBadge({ value, invert }) {
+  if (value == null) return null
+  const positive = invert ? value < 0 : value > 0
+  const neutral = value === 0
+  const color = neutral ? '#9B9B96' : positive ? '#155724' : '#721C24'
+  const bg = neutral ? '#F0F0EE' : positive ? '#D4EDDA' : '#F8D7DA'
+  const Icon = neutral ? Minus : positive ? TrendingDown : TrendingUp
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, background: bg, color, borderRadius: 20, padding: '2px 7px', flexShrink: 0 }}>
+      <Icon size={10} />{Math.abs(value)}%
+    </span>
+  )
+}
+
 function Badge({ bg, color, children }) {
   return <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, background: bg, color, borderRadius: 20, padding: '2px 8px' }}>{children}</span>
 }
 
 function Tip({ children }) {
   return (
-    <div style={{
-      position: 'absolute', right: 0, top: 18, zIndex: 50,
-      background: '#1C1C1A', color: '#E8E8E4', fontSize: 11, lineHeight: 1.5,
-      borderRadius: 8, padding: '8px 10px', width: 190,
-      boxShadow: '0 8px 24px rgba(0,0,0,0.2)', pointerEvents: 'none',
-    }}>{children}</div>
+    <div style={{ position: 'absolute', right: 0, top: 18, zIndex: 50, background: '#1C1C1A', color: '#E8E8E4', fontSize: 11, lineHeight: 1.5, borderRadius: 8, padding: '8px 10px', width: 190, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', pointerEvents: 'none' }}>
+      {children}
+    </div>
   )
 }
 
