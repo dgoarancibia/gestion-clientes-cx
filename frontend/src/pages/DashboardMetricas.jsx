@@ -19,32 +19,32 @@ export default function DashboardMetricas() {
   ]
 
   return (
-    <div className="px-6 py-6" style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div className="px-6 py-6" style={{ maxWidth: '100%' }}>
 
-      {/* Sección: Volumen y flujo */}
-      <SectionTitle color="#A8D5C2">Volumen y flujo</SectionTitle>
-      <div className="grid grid-cols-2 gap-4 mb-6" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-        <KPICard titulo="Casos ingresados" valor={kpis.total} subtitulo="En el período seleccionado" />
-        <KPICard titulo="Casos cerrados" valor={kpis.cerrados} subtitulo={`${kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0}% del total`} />
-        <KPICard titulo="Backlog activo" valor={kpis.abiertos} subtitulo="Sin fecha de cierre" />
-        <KPICard titulo="Tasa de reapertura" valor={`${kpis.tasaReapertura}%`} subtitulo="Sobre casos cerrados" />
-      </div>
-
-      {/* Sección: Tiempos */}
-      <SectionTitle color="#B5D4F4">Tiempos de gestión</SectionTitle>
-      <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+      {/* KPIs principales — fila única */}
+      <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+        <KPICard titulo="Casos ingresados" valor={kpis.total} subtitulo="En el período"
+          tooltip="Total de casos recibidos en el período seleccionado, independiente de su estado." />
+        <KPICard titulo="Casos cerrados" valor={kpis.cerrados} subtitulo={`${kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0}% del total`}
+          tooltip="Casos que tienen fecha de cierre dentro del período. Indica la capacidad de resolución del equipo." />
+        <KPICard titulo="Backlog activo" valor={kpis.abiertos} subtitulo="Sin fecha de cierre"
+          tooltip="Casos aún abiertos — sin fecha de cierre registrada. Un backlog alto puede indicar cuellos de botella." />
+        <KPICard titulo="Reapertura" valor={`${kpis.tasaReapertura}%`} subtitulo="Sobre cerrados"
+          tooltip="Porcentaje de casos que fueron cerrados y luego reabiertos. Una tasa alta indica resoluciones incompletas." />
         <KPICard
-          titulo="ART — Tiempo promedio de resolución"
+          titulo="ART"
           valor={kpis.art}
-          unidad="días hábiles"
-          semaforo={{ ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'Dentro del SLA' : kpis.art <= 8 ? 'En riesgo' : 'Fuera del SLA' }}
+          unidad="días háb."
+          semaforo={{ ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 8 ? 'En riesgo' : 'Fuera SLA' }}
+          tooltip="Average Resolution Time: promedio de días hábiles entre el ingreso y el cierre de un caso. Meta: ≤ 5 días."
         />
         <KPICard
-          titulo="FRT — Primera respuesta"
+          titulo="FRT"
           valor={kpis.frt !== null ? kpis.frt : '—'}
-          unidad={kpis.frt !== null ? 'horas' : ''}
-          semaforo={kpis.frt !== null ? { ...semaforoFRT(kpis.frt), label: kpis.frt <= 24 ? 'Dentro del SLA' : kpis.frt <= 48 ? 'En riesgo' : 'Fuera del SLA' } : null}
-          subtitulo={kpis.frt === null ? 'Sin datos de primera respuesta' : null}
+          unidad={kpis.frt !== null ? 'hrs' : ''}
+          semaforo={kpis.frt !== null ? { ...semaforoFRT(kpis.frt), label: kpis.frt <= 24 ? 'En SLA' : kpis.frt <= 48 ? 'En riesgo' : 'Fuera SLA' } : null}
+          subtitulo={kpis.frt === null ? 'Sin datos' : null}
+          tooltip="First Response Time: tiempo promedio en horas desde que ingresa un caso hasta la primera respuesta al cliente. Meta: ≤ 24 hrs."
         />
       </div>
 
