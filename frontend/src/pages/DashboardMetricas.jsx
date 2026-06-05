@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { useData } from '../context/DataContext'
-import { calcularKPIs, semaforoART, semaforoFRT, semaforoEscalamiento } from '../utils/kpis'
+import { calcularKPIs, semaforoART, semaforoEscalamiento } from '../utils/kpis'
 import { useState } from 'react'
 import { HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
@@ -39,39 +39,43 @@ export default function DashboardMetricas() {
 
   const KPI = VARIANTE_A ? KPICardA : KPICardC
 
+  const pctCerrados = kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0
+
   const kpisData = [
-    { label: 'Casos ingresados', value: kpis.total, sub: 'En el período', d: delta(kpis.total, kpisAnt?.total), inv: false, max: 200,
-      tooltip: 'Total de casos recibidos. Un alza puede indicar mayor actividad o problemas de calidad.' },
-    { label: 'Casos cerrados', value: kpis.cerrados, sub: `${kpis.total ? Math.round(kpis.cerrados/kpis.total*100) : 0}% del total`, d: delta(kpis.cerrados, kpisAnt?.cerrados), inv: false, max: 200,
-      tooltip: 'Casos con fecha de cierre. Alza es positiva.' },
-    { label: 'Backlog activo', value: kpis.abiertos, sub: 'Sin fecha de cierre', d: delta(kpis.abiertos, kpisAnt?.abiertos), inv: true, max: 50, alert: kpis.abiertos > 20,
-      tooltip: 'Casos aún abiertos. Baja es positiva.' },
-    { label: 'Reapertura', value: kpis.cerrados === 0 ? '—' : `${kpis.tasaReapertura}%`, sub: 'Sobre cerrados', d: kpisAnt ? delta(kpis.tasaReapertura, kpisAnt.tasaReapertura) : null, inv: true, max: 20,
-      tooltip: '% de casos reabiertos tras cierre. Baja es positiva.' },
-    { label: 'ART', value: kpis.art, sub: 'días hábiles', d: kpisAnt ? delta(kpis.art, kpisAnt.art) : null, inv: true, max: 10,
-      badge: { ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 8 ? 'En riesgo' : 'Fuera SLA' },
-      tooltip: 'Promedio días hábiles entre ingreso y cierre. Meta: ≤ 5 días.' },
-    { label: 'FRT', value: kpis.frt ?? '—', sub: kpis.frt ? 'horas' : 'Sin datos', d: kpisAnt?.frt && kpis.frt ? delta(kpis.frt, kpisAnt.frt) : null, inv: true, max: 48,
-      badge: kpis.frt ? { ...semaforoFRT(kpis.frt), label: kpis.frt <= 24 ? 'En SLA' : kpis.frt <= 48 ? 'En riesgo' : 'Fuera SLA' } : null,
-      tooltip: 'Promedio horas hasta primera respuesta. Meta: ≤ 24 hrs.' },
-    { label: 'Escalamiento', value: `${kpis.tasaEscalamiento}%`, sub: `${kpis.escalados} casos`, d: kpisAnt ? delta(kpis.tasaEscalamiento, kpisAnt.tasaEscalamiento) : null, inv: true, max: 30,
-      badge: { ...semaforoEscalamiento(kpis.tasaEscalamiento), label: kpis.tasaEscalamiento <= 15 ? 'Normal' : kpis.tasaEscalamiento <= 25 ? 'Elevado' : 'Crítico' },
-      tooltip: 'Casos escalados a nivel superior. Meta: ≤ 15%.' },
-    { label: 'Tipos de reclamo', value: tipoPieData[0]?.name ?? '—', sub: `Líder: ${tipoPieData[0]?.value ?? 0} casos`, d: null, inv: false, max: null,
-      tooltip: 'Tipo de reclamo más frecuente en el período.' },
+    { label: 'Casos ingresados', value: kpis.total, sub: 'En el período',
+      d: delta(kpis.total, kpisAnt?.total), inv: false, max: kpisAnt?.total ?? 200,
+      tooltip: 'Total de casos recibidos en el período, independiente de su estado.' },
+    { label: 'Casos cerrados', value: kpis.cerrados, sub: `${pctCerrados}% del total`,
+      d: delta(kpis.cerrados, kpisAnt?.cerrados), inv: false, max: kpis.total,
+      tooltip: 'Casos en fase cerrada (Cerrado, Problema resuelto). Alza es positiva.' },
+    { label: 'Backlog activo', value: kpis.abiertos, sub: 'En gestión',
+      d: delta(kpis.abiertos, kpisAnt?.abiertos), inv: true, max: 100, alert: kpis.abiertos > 50,
+      tooltip: 'Casos aún abiertos en cualquier fase activa. Baja es positiva.' },
+    { label: 'Reclamos', value: kpis.porTipo['Reclamo'] ?? 0,
+      sub: `${kpis.total ? Math.round((kpis.porTipo['Reclamo'] ?? 0) / kpis.total * 100) : 0}% del total`,
+      d: kpisAnt ? delta(kpis.porTipo['Reclamo'] ?? 0, kpisAnt.porTipo?.['Reclamo'] ?? 0) : null, inv: true, max: kpis.total,
+      tooltip: 'Casos de tipo Reclamo. Es el tipo más crítico a monitorear.' },
+    { label: 'ART', value: kpis.art != null ? `${kpis.art}` : '—', sub: 'días promedio',
+      d: kpisAnt?.art != null && kpis.art != null ? delta(kpis.art, kpisAnt.art) : null, inv: true, max: 20,
+      badge: kpis.art != null ? { ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 10 ? 'En riesgo' : 'Fuera SLA' } : null,
+      tooltip: 'Antigüedad promedio de resolución en días. Meta: ≤ 5 días. Baja es positiva.' },
+    { label: 'Escalamiento', value: `${kpis.tasaEscalamiento}%`, sub: `${kpis.escalados} casos`,
+      d: kpisAnt ? delta(kpis.tasaEscalamiento, kpisAnt.tasaEscalamiento) : null, inv: true, max: 30,
+      badge: { ...semaforoEscalamiento(kpis.tasaEscalamiento), label: kpis.tasaEscalamiento <= 10 ? 'Normal' : kpis.tasaEscalamiento <= 20 ? 'Elevado' : 'Crítico' },
+      tooltip: 'Casos remitidos a una instancia superior. Meta: ≤ 10%.' },
+    { label: 'Tipo más frecuente', value: tipoPieData[0]?.name ?? '—', sub: `${tipoPieData[0]?.value ?? 0} casos`,
+      d: null, inv: false, max: null,
+      tooltip: 'Tipo de caso con mayor volumen en el período.' },
+    { label: 'Área más activa', value: Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[0] ?? '—',
+      sub: `${Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[1] ?? 0} casos`,
+      d: null, inv: false, max: null,
+      tooltip: 'Área responsable con más casos en el período.' },
   ]
 
   return (
     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Preview de variante activa */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: -4 }}>
-        <span style={{ fontSize: 11, color: '#9B9B96', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-          Variante {VARIANTE_A ? 'A — Minimalista' : 'C — Con barra de progreso'}
-        </span>
-      </div>
-
-      {/* Fila 1 — 8 KPIs incluyendo escalamiento y tipo */}
+      {/* Fila 1 — 8 KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 160px))', gap: 10 }}>
         {kpisData.map((k, i) => (
           <KPI key={i} {...k} delta={k.d} deltaInvert={k.inv} />
