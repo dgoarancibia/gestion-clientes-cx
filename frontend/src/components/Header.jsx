@@ -15,42 +15,49 @@ export default function Header() {
       </span>
 
       {casosCargados && (
-        <div className="flex items-center gap-3 flex-1">
-          <div className="flex items-center gap-1.5">
-            <label style={{ fontSize: 12, color: '#73726C', whiteSpace: 'nowrap' }}>Desde</label>
-            <input
-              type="date"
-              value={periodoDesde || ''}
-              onChange={e => setPeriodoDesde(e.target.value || null)}
-              style={{
-                fontSize: 12, color: '#2C2C2A', border: '0.5px solid #E8E6E0',
-                borderRadius: 6, padding: '3px 8px', background: '#FAFAF9', outline: 'none'
-              }}
-            />
+        <>
+          <div style={{ width: 1, height: 20, background: '#E8E6E0', flexShrink: 0 }} />
+          <div className="flex items-center gap-3 flex-1">
+            <span style={{ fontSize: 11, color: '#73726C', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filtros</span>
+            <div className="flex items-center gap-1.5">
+              <label style={{ fontSize: 12, color: '#73726C', whiteSpace: 'nowrap' }}>Desde</label>
+              <input
+                type="date"
+                value={periodoDesde || ''}
+                onChange={e => setPeriodoDesde(e.target.value || null)}
+                style={{
+                  fontSize: 12, color: '#2C2C2A', border: '0.5px solid #E8E6E0',
+                  borderRadius: 6, padding: '3px 8px', background: '#FAFAF9', outline: 'none'
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label style={{ fontSize: 12, color: '#73726C', whiteSpace: 'nowrap' }}>Hasta</label>
+              <input
+                type="date"
+                value={periodoHasta || ''}
+                onChange={e => setPeriodoHasta(e.target.value || null)}
+                style={{
+                  fontSize: 12, color: '#2C2C2A', border: '0.5px solid #E8E6E0',
+                  borderRadius: 6, padding: '3px 8px', background: '#FAFAF9', outline: 'none'
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label style={{ fontSize: 12, color: '#73726C', whiteSpace: 'nowrap' }}>Marca</label>
+              <select
+                value={marcaActiva}
+                onChange={e => setMarcaActiva(e.target.value)}
+                style={{
+                  fontSize: 12, color: '#2C2C2A', border: '0.5px solid #E8E6E0',
+                  borderRadius: 6, padding: '3px 8px', background: '#FAFAF9', outline: 'none', cursor: 'pointer'
+                }}
+              >
+                {marcas.map(m => <option key={m}>{m}</option>)}
+              </select>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <label style={{ fontSize: 12, color: '#73726C', whiteSpace: 'nowrap' }}>Hasta</label>
-            <input
-              type="date"
-              value={periodoHasta || ''}
-              onChange={e => setPeriodoHasta(e.target.value || null)}
-              style={{
-                fontSize: 12, color: '#2C2C2A', border: '0.5px solid #E8E6E0',
-                borderRadius: 6, padding: '3px 8px', background: '#FAFAF9', outline: 'none'
-              }}
-            />
-          </div>
-          <select
-            value={marcaActiva}
-            onChange={e => setMarcaActiva(e.target.value)}
-            style={{
-              fontSize: 12, color: '#2C2C2A', border: '0.5px solid #E8E6E0',
-              borderRadius: 6, padding: '3px 8px', background: '#FAFAF9', outline: 'none', cursor: 'pointer'
-            }}
-          >
-            {marcas.map(m => <option key={m}>{m}</option>)}
-          </select>
-        </div>
+        </>
       )}
 
       <div className="flex items-center gap-3">

@@ -25,19 +25,24 @@ export default function DashboardMetricas() {
     { rango: '6–10 días', cantidad: kpis.aging['6-10'], fill: '#FAC775' },
     { rango: '+10 días', cantidad: kpis.aging['+10'].length, fill: '#F8D7DA' },
   ]
+  const agingVacio = agingData.every(d => d.cantidad === 0)
 
   return (
     <div className="px-6 py-6" style={{ maxWidth: '100%' }}>
 
-      {/* KPIs principales — fila única */}
+      {/* KPIs principales */}
       <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
         <KPICard titulo="Casos ingresados" valor={kpis.total} subtitulo="En el período"
           tooltip="Total de casos recibidos en el período seleccionado, independiente de su estado." />
-        <KPICard titulo="Casos cerrados" valor={kpis.cerrados} subtitulo={`${kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0}% del total`}
+        <KPICard titulo="Casos cerrados" valor={kpis.cerrados}
+          subtitulo={`${kpis.total ? Math.round(kpis.cerrados / kpis.total * 100) : 0}% del total`}
           tooltip="Casos que tienen fecha de cierre dentro del período. Indica la capacidad de resolución del equipo." />
         <KPICard titulo="Backlog activo" valor={kpis.abiertos} subtitulo="Sin fecha de cierre"
           tooltip="Casos aún abiertos — sin fecha de cierre registrada. Un backlog alto puede indicar cuellos de botella." />
-        <KPICard titulo="Reapertura" valor={`${kpis.tasaReapertura}%`} subtitulo="Sobre cerrados"
+        <KPICard
+          titulo="Reapertura"
+          valor={kpis.cerrados === 0 ? '—' : `${kpis.tasaReapertura}%`}
+          subtitulo={kpis.cerrados === 0 ? 'Sin casos cerrados' : 'Sobre cerrados'}
           tooltip="Porcentaje de casos que fueron cerrados y luego reabiertos. Una tasa alta indica resoluciones incompletas." />
         <KPICard
           titulo="ART"
@@ -51,8 +56,8 @@ export default function DashboardMetricas() {
           valor={kpis.frt !== null ? kpis.frt : '—'}
           unidad={kpis.frt !== null ? 'hrs' : ''}
           semaforo={kpis.frt !== null ? { ...semaforoFRT(kpis.frt), label: kpis.frt <= 24 ? 'En SLA' : kpis.frt <= 48 ? 'En riesgo' : 'Fuera SLA' } : null}
-          subtitulo={kpis.frt === null ? 'Sin datos' : null}
-          tooltip="First Response Time: tiempo promedio en horas desde que ingresa un caso hasta la primera respuesta al cliente. Meta: ≤ 24 hrs."
+          subtitulo={kpis.frt === null ? 'Sin registros de primera respuesta' : null}
+          tooltip="First Response Time: promedio de horas entre el ingreso y la primera respuesta al cliente. Meta: ≤ 24 hrs."
         />
       </div>
 
@@ -62,47 +67,40 @@ export default function DashboardMetricas() {
         boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '16px 24px', marginBottom: 24,
       }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-          <p style={{ fontSize: 12, color: '#73726C' }}>Casos por marca</p>
-          <span style={{ fontSize: 11, color: '#73726C' }}>{casosFiltrados.length} casos totales</span>
+          <p style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A' }}>Distribución por marca</p>
+          <span style={{ fontSize: 12, color: '#73726C' }}>{casosFiltrados.length} casos totales</span>
         </div>
         <div className="flex flex-col gap-2">
           {marcaData.map((m, i) => (
             <div key={m.marca} className="flex items-center gap-3">
               <span style={{ fontSize: 13, color: '#2C2C2A', width: 80, flexShrink: 0 }}>{m.marca}</span>
               <div style={{ flex: 1, background: '#F3F2EE', borderRadius: 4, height: 8, overflow: 'hidden' }}>
-                <div style={{
-                  width: `${m.pct}%`, height: '100%', borderRadius: 4,
-                  background: COLORES_TIPO[i % COLORES_TIPO.length],
-                  transition: 'width 0.3s ease',
-                }} />
+                <div style={{ width: `${m.pct}%`, height: '100%', borderRadius: 4, background: COLORES_TIPO[i % COLORES_TIPO.length], transition: 'width 0.3s ease' }} />
               </div>
               <span style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A', width: 36, textAlign: 'right' }}>{m.pct}%</span>
-              <span style={{ fontSize: 12, color: '#73726C', width: 52, textAlign: 'right' }}>{m.cantidad} casos</span>
+              <span style={{ fontSize: 12, color: '#73726C', width: 56, textAlign: 'right' }}>{m.cantidad} casos</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Sección: Calidad + Distribución por tipo */}
+      {/* Calidad de resolución */}
       <SectionTitle color="#A8D5C2">Calidad de resolución</SectionTitle>
       <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div style={{ background: '#FFFFFF', borderRadius: 12, border: '0.5px solid #E8E6E0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px' }}>
-          <p style={{ fontSize: 12, color: '#73726C', marginBottom: 8 }}>Tasa de escalamiento</p>
+          <p style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A', marginBottom: 4 }}>Tasa de escalamiento</p>
+          <p style={{ fontSize: 12, color: '#73726C', marginBottom: 12 }}>Casos que requirieron escalar a un nivel superior</p>
           <div className="flex items-end gap-2 mb-2">
             <span style={{ fontSize: 28, fontWeight: 500, color: '#2C2C2A', lineHeight: 1 }}>{kpis.tasaEscalamiento}%</span>
             <span style={{ fontSize: 13, color: '#73726C', marginBottom: 2 }}>{kpis.escalados} casos</span>
           </div>
-          <span style={{
-            display: 'inline-block', fontSize: 12, fontWeight: 500,
-            ...semaforoEscalamiento(kpis.tasaEscalamiento),
-            borderRadius: 20, padding: '2px 10px',
-          }}>
+          <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 500, ...semaforoEscalamiento(kpis.tasaEscalamiento), borderRadius: 20, padding: '2px 10px' }}>
             {kpis.tasaEscalamiento <= 15 ? 'Normal' : kpis.tasaEscalamiento <= 25 ? 'Elevado' : 'Crítico'}
           </span>
         </div>
 
         <div style={{ background: '#FFFFFF', borderRadius: 12, border: '0.5px solid #E8E6E0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px' }}>
-          <p style={{ fontSize: 12, color: '#73726C', marginBottom: 12 }}>Distribución por tipo de reclamo</p>
+          <p style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A', marginBottom: 12 }}>Distribución por tipo de reclamo</p>
           {tipoPieData.length > 0 ? (
             <div className="flex items-center gap-4">
               <ResponsiveContainer width={140} height={140}>
@@ -129,26 +127,31 @@ export default function DashboardMetricas() {
         </div>
       </div>
 
-      {/* Sección: Aging */}
+      {/* Aging */}
       <SectionTitle color="#FAC775">Aging de casos abiertos</SectionTitle>
       <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div style={{ background: '#FFFFFF', borderRadius: 12, border: '0.5px solid #E8E6E0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px' }}>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={agingData} layout="vertical" margin={{ left: 8, right: 16 }}>
-              <CartesianGrid horizontal={false} stroke="#E8E6E0" strokeWidth={0.5} />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#73726C' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="rango" tick={{ fontSize: 12, fill: '#2C2C2A' }} axisLine={false} tickLine={false} width={70} />
-              <Tooltip formatter={(v) => [`${v} casos`]} />
-              <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
-                {agingData.map((d, i) => <Cell key={i} fill={d.fill} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <p style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A', marginBottom: 12 }}>Distribución por tiempo abierto</p>
+          {agingVacio ? (
+            <p style={{ fontSize: 13, color: '#73726C' }}>Sin casos abiertos en el período</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={agingData} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <CartesianGrid horizontal={false} stroke="#E8E6E0" strokeWidth={0.5} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#73726C' }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="rango" tick={{ fontSize: 12, fill: '#2C2C2A' }} axisLine={false} tickLine={false} width={70} />
+                <Tooltip formatter={(v) => [`${v} casos`]} />
+                <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
+                  {agingData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {kpis.aging['+10'].length > 0 ? (
-          <div style={{ background: '#FFFFFF', borderRadius: 12, border: '0.5px solid #E8E6E0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px', overflowY: 'auto', maxHeight: 240 }}>
-            <p style={{ fontSize: 12, color: '#73726C', marginBottom: 10 }}>Casos críticos (+10 días)</p>
+          <div style={{ background: '#FFFFFF', borderRadius: 12, border: '0.5px solid #E8E6E0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px', overflowY: 'auto', maxHeight: 260 }}>
+            <p style={{ fontSize: 13, fontWeight: 500, color: '#2C2C2A', marginBottom: 10 }}>Casos críticos — más de 10 días abiertos</p>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#F3F2EE' }}>
@@ -158,7 +161,7 @@ export default function DashboardMetricas() {
                 </tr>
               </thead>
               <tbody>
-                {kpis.aging['+10'].sort((a, b) => a.dias - b.dias).map((c, i) => (
+                {kpis.aging['+10'].sort((a, b) => b.dias - a.dias).map((c, i) => (
                   <tr key={c.id_caso} style={{ background: i % 2 === 0 ? '#FFFFFF' : '#FAFAF8' }}>
                     <td style={{ padding: '4px 8px', color: '#2C2C2A' }}>{c.id_caso}</td>
                     <td style={{ padding: '4px 8px', color: '#73726C' }}>{c.fecha_ingreso}</td>
@@ -179,20 +182,19 @@ export default function DashboardMetricas() {
         )}
       </div>
 
-      {/* Sección: Ejecutivas */}
+      {/* Performance del equipo */}
       <SectionTitle color="#CECBF6">Performance del equipo</SectionTitle>
       <div style={{ background: '#FFFFFF', borderRadius: 12, border: '0.5px solid #E8E6E0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px', marginBottom: 32 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#F3F2EE' }}>
-              {['Ejecutiva', 'Asignados', 'Cerrados', 'ART individual', '% del total', 'Distribución'].map(h => (
+              {['Ejecutiva', 'Asignados', 'Cerrados', 'ART (días háb.)', '% del total', 'Distribución'].map(h => (
                 <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 500, color: '#2C2C2A', fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {kpis.ejecutivas.sort((a, b) => b.asignados - a.asignados).map((e, i) => {
-              const sem = semaforoART(e.art)
               const vsProm = kpis.artPromedio > 0 ? ((e.art - kpis.artPromedio) / kpis.artPromedio) * 100 : 0
               const artSem = vsProm > 20 ? { bg: '#F8D7DA', color: '#721C24' } : vsProm > 0 ? { bg: '#FFF3CD', color: '#856404' } : { bg: '#D4EDDA', color: '#155724' }
               return (
@@ -202,7 +204,7 @@ export default function DashboardMetricas() {
                   <td style={{ padding: '8px 12px', color: '#73726C' }}>{e.cerrados}</td>
                   <td style={{ padding: '8px 12px' }}>
                     <span style={{ background: artSem.bg, color: artSem.color, borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 500 }}>
-                      {e.art.toFixed(1)} días
+                      {e.art.toFixed(1)}
                     </span>
                   </td>
                   <td style={{ padding: '8px 12px', color: '#73726C' }}>{e.pct.toFixed(1)}%</td>
@@ -216,7 +218,7 @@ export default function DashboardMetricas() {
             })}
           </tbody>
         </table>
-        <p style={{ fontSize: 11, color: '#73726C', marginTop: 10 }}>
+        <p style={{ fontSize: 12, color: '#73726C', marginTop: 10 }}>
           El ART individual puede variar según la complejidad de los casos asignados.
         </p>
       </div>
@@ -227,8 +229,8 @@ export default function DashboardMetricas() {
 function SectionTitle({ children, color }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <div style={{ width: 10, height: 10, borderRadius: 2, background: color }} />
-      <h2 style={{ fontSize: 13, fontWeight: 500, color: '#73726C', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{children}</h2>
+      <div style={{ width: 12, height: 12, borderRadius: 2, background: color, flexShrink: 0 }} />
+      <h2 style={{ fontSize: 11, fontWeight: 600, color: '#2C2C2A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{children}</h2>
     </div>
   )
 }
