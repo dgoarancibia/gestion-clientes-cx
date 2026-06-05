@@ -39,7 +39,7 @@ export default function DashboardMetricas() {
 
       {/* Fila 1 — 6 KPIs con comparativa mes anterior */}
       <Section label="Resumen del período">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 180px))', gap: 12 }}>
           <KPICard label="Casos ingresados" value={kpis.total} sub="En el período"
             delta={delta(kpis.total, kpisAnt?.total)}
             deltaInvert={false}
@@ -238,24 +238,36 @@ function KPICard({ label, value, sub, tooltip, badge, alert, delta: d, deltaInve
       background: '#FFFFFF', borderRadius: 10,
       border: '1px solid #EBEBEB',
       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      padding: '14px 16px',
+      padding: '12px 14px',
+      display: 'flex', flexDirection: 'column', gap: 0,
+      minHeight: 90,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-        <p style={{ fontSize: 11, color: '#9B9B96', lineHeight: 1.3, paddingRight: 8 }}>{label}</p>
+      {/* Label + tooltip */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+        <p style={{ fontSize: 11, color: '#9B9B96', lineHeight: 1 }}>{label}</p>
         {tooltip && (
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <HelpCircle size={12} color="#D0D0CC" style={{ cursor: 'default' }}
+            <HelpCircle size={11} color="#D8D8D4" style={{ cursor: 'default' }}
               onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)} />
             {show && <Tip>{tooltip}</Tip>}
           </div>
         )}
       </div>
-      <p style={{ fontSize: 28, fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1, marginBottom: 6 }}>{value}</p>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        {badge
-          ? <Badge bg={badge.bg} color={badge.color}>{badge.label}</Badge>
-          : <p style={{ fontSize: 11, color: '#9B9B96' }}>{sub}</p>
-        }
+      {/* Valor — crece para ocupar espacio central */}
+      <p style={{
+        fontSize: 28, fontWeight: 700,
+        color: alert ? '#721C24' : '#1C1C1A',
+        lineHeight: 1, flex: 1,
+        display: 'flex', alignItems: 'center',
+      }}>{value}</p>
+      {/* Footer pegado al fondo */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 }}>
+        <div style={{ minWidth: 0 }}>
+          {badge
+            ? <Badge bg={badge.bg} color={badge.color}>{badge.label}</Badge>
+            : <p style={{ fontSize: 11, color: '#9B9B96', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1 }}>{sub}</p>
+          }
+        </div>
         {d !== null && d !== undefined && <DeltaBadge value={d} invert={deltaInvert} />}
       </div>
     </div>
