@@ -43,6 +43,18 @@ export default function DashboardMetricas() {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
 
+  const reclamosPorDealer = Object.entries(
+    casosFiltrados.filter(c => c.tipo_caso === 'Reclamo').reduce((acc, c) => {
+      const d = c.dealer || 'Sin dealer'
+      acc[d] = (acc[d] || 0) + 1
+      return acc
+    }, {})
+  ).map(([dealer, cantidad]) => ({ dealer, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad)
+    .slice(0, 10)
+  const dealersConDato = casosFiltrados.filter(c => c.tipo_caso === 'Reclamo' && c.dealer).length
+  const totalReclamos = casosFiltrados.filter(c => c.tipo_caso === 'Reclamo').length
+
   const cerradosSinFechaCierre = casosFiltrados.filter(c =>
     !c.fecha_cierre && (c.estado === 'Cerrado' || c.estado === 'Problema resuelto' || c.estado === 'Problema resuelto - Sin Encuesta' || c.estado === 'Termina Caso')
   )
@@ -151,6 +163,38 @@ export default function DashboardMetricas() {
           }
         </Card>
       </div>
+
+      {/* Reclamos por dealer */}
+      <Card title="Reclamos por dealer" subtitle={`Top ${reclamosPorDealer.length} concesionarios con más reclamos`}
+        tooltip={`${dealersConDato} de ${totalReclamos} reclamos tienen "Concesionario/Dealer" registrado. Si el dato es bajo, pide al equipo que lo complete en el CRM para que este gráfico sea representativo.`}>
+        {totalReclamos === 0
+          ? <Empty text="Sin reclamos en el período" good />
+          : dealersConDato < totalReclamos * 0.5
+          ? <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+              <p style={{ fontSize: 11, color: '#856404', background: '#FFF8E8', border: '1px solid #F5E3B3', borderRadius: 8, padding: '8px 12px' }}>
+                ⚠️ Solo {dealersConDato} de {totalReclamos} reclamos tienen dealer registrado — el dato aún no es suficientemente representativo. Aun así, esto es lo que se observa con lo disponible:
+              </p>
+              <ResponsiveContainer width="100%" height={Math.max(reclamosPorDealer.length * 28, 80)}>
+                <BarChart data={reclamosPorDealer} layout="vertical" margin={{ left: 4, right: 24, top: 4, bottom: 0 }}>
+                  <CartesianGrid horizontal={false} stroke="#F0F0EE" />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: '#9B9B96' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <YAxis type="category" dataKey="dealer" tick={{ fontSize: 11, fill: '#4A4A46' }} axisLine={false} tickLine={false} width={170} />
+                  <Tooltip formatter={v => [`${v} reclamos`]} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #EBEBEB' }} />
+                  <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} fill="#F4C5C5" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          : <ResponsiveContainer width="100%" height={Math.max(reclamosPorDealer.length * 28, 80)}>
+              <BarChart data={reclamosPorDealer} layout="vertical" margin={{ left: 4, right: 24, top: 8, bottom: 0 }}>
+                <CartesianGrid horizontal={false} stroke="#F0F0EE" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B9B96' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis type="category" dataKey="dealer" tick={{ fontSize: 11, fill: '#4A4A46' }} axisLine={false} tickLine={false} width={170} />
+                <Tooltip formatter={v => [`${v} reclamos`]} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #EBEBEB' }} />
+                <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} fill="#F4C5C5" />
+              </BarChart>
+            </ResponsiveContainer>
+        }
+      </Card>
 
       {/* Fila 3 — Casos críticos + Performance equipo */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: 12 }}>
