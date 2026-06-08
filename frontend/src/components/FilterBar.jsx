@@ -36,11 +36,11 @@ const PRESETS = [
 ]
 
 export default function FilterBar() {
-  const { casosCargados, periodoDesde, setPeriodoDesde, periodoHasta, setPeriodoHasta, marcas, marcaActiva, setMarcaActiva } = useData()
+  const { casosCargados, periodoDesde, setPeriodoDesde, periodoHasta, setPeriodoHasta, marcas, marcaActiva, setMarcaActiva, tipos, tipoActivo, setTipoActivo } = useData()
 
   if (!casosCargados) return null
 
-  const activeCount = [periodoDesde, periodoHasta, marcaActiva !== 'Todas'].filter(Boolean).length
+  const activeCount = [periodoDesde, periodoHasta, marcaActiva !== 'Todas', tipoActivo !== 'Todos'].filter(Boolean).length
 
   const handlePreset = (key) => {
     if (!key) return
@@ -91,11 +91,17 @@ export default function FilterBar() {
             {marcas.map(m => <option key={m}>{m}</option>)}
           </select>
         </FilterChip>
+        <FilterChip label="Tipo">
+          <select value={tipoActivo} onChange={e => setTipoActivo(e.target.value)}
+            style={{ fontSize: 12, color: '#1C1C1A', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer' }}>
+            {tipos.map(t => <option key={t}>{t}</option>)}
+          </select>
+        </FilterChip>
       </div>
 
       {activeCount > 0 && (
         <button
-          onClick={() => { setPeriodoDesde(null); setPeriodoHasta(null); setMarcaActiva('Todas') }}
+          onClick={() => { setPeriodoDesde(null); setPeriodoHasta(null); setMarcaActiva('Todas'); setTipoActivo('Todos') }}
           style={{ fontSize: 11, color: '#9B9B96', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 4, textDecoration: 'underline' }}
         >
           Limpiar

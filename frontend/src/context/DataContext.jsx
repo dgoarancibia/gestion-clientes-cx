@@ -9,10 +9,16 @@ export function DataProvider({ children }) {
   const [periodoDesde, setPeriodoDesde] = useState(null)
   const [periodoHasta, setPeriodoHasta] = useState(null)
   const [marcaActiva, setMarcaActiva] = useState('Todas')
+  const [tipoActivo, setTipoActivo] = useState('Todos')
 
   const marcas = useMemo(() => {
     const set = new Set(casos.map(c => c.marca).filter(Boolean))
     return ['Todas', ...Array.from(set).sort()]
+  }, [casos])
+
+  const tipos = useMemo(() => {
+    const set = new Set(casos.map(c => c.tipo_caso).filter(Boolean))
+    return ['Todos', ...Array.from(set).sort()]
   }, [casos])
 
   const casosFiltrados = useMemo(() => {
@@ -21,15 +27,17 @@ export function DataProvider({ children }) {
       if (periodoDesde && fecha < new Date(periodoDesde)) return false
       if (periodoHasta && fecha > new Date(periodoHasta + 'T23:59:59')) return false
       if (marcaActiva !== 'Todas' && c.marca !== marcaActiva) return false
+      if (tipoActivo !== 'Todos' && c.tipo_caso !== tipoActivo) return false
       return true
     })
-  }, [casos, periodoDesde, periodoHasta, marcaActiva])
+  }, [casos, periodoDesde, periodoHasta, marcaActiva, tipoActivo])
 
   const casosAnteriorFiltrados = useMemo(() => {
     return casosAnterior.filter(c =>
-      marcaActiva === 'Todas' || c.marca === marcaActiva
+      (marcaActiva === 'Todas' || c.marca === marcaActiva) &&
+      (tipoActivo === 'Todos' || c.tipo_caso === tipoActivo)
     )
-  }, [casosAnterior, marcaActiva])
+  }, [casosAnterior, marcaActiva, tipoActivo])
 
   return (
     <DataContext.Provider value={{
@@ -40,6 +48,8 @@ export function DataProvider({ children }) {
       periodoHasta, setPeriodoHasta,
       marcaActiva, setMarcaActiva,
       marcas,
+      tipoActivo, setTipoActivo,
+      tipos,
       casosFiltrados,
       casosAnteriorFiltrados,
       casosCargados: casos.length > 0,
