@@ -53,7 +53,7 @@ export async function parsearArchivoCasos(file) {
   const faltantes = COLUMNAS_REQUERIDAS.filter(c => !keys.includes(c))
   if (faltantes.length) throw new Error(`Columnas faltantes: ${faltantes.join(', ')}`)
 
-  return rows.map(normalizarFila).filter(r => r.id_caso && r.fecha_ingreso)
+  return rows.map(normalizarFila).filter(r => r.id_caso && r.fecha_ingreso && r.tipo_caso !== 'Felicitaciones')
 }
 
 export async function parsearArchivoVentas(file) {

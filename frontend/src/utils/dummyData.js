@@ -5,7 +5,7 @@ const ejecutivas = [
 ]
 const marcas = ['KIA', 'HYUNDAI', 'Otras']
 const dealers = ['Rosselot - Santiago', 'Salfa - Las Condes', 'Kaufmann - Providencia', 'Rosselot - Talca', 'Salfa - Maipú']
-const tipos = ['Reclamo', 'Consulta', 'Garantía', 'Felicitaciones', 'Sugerencia']
+const tipos = ['Reclamo', 'Consulta', 'Garantía', 'Sugerencia']
 const areas = ['Servicio Técnico', 'Ventas', 'Gestión Clientes', 'Repuestos y accesorios', 'Contact center']
 const motivos = ['Fallas o anomalías', 'Proceso Venta', 'Mantención', 'Condiciones del Negocio', 'Proceso Servicio', 'Garantía']
 const origenes = ['Sitio Web', 'Teléfono', 'Correo electrónico', 'Presencial']

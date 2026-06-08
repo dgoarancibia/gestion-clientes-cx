@@ -30,7 +30,7 @@ export default function DashboardMetricas() {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
 
-  const tipoMasFrecuente = tipoPieData.filter(t => t.name !== 'Felicitaciones')[0]
+  const tipoMasFrecuente = tipoPieData[0]
 
   const agingData = [
     { rango: '0–2 días', cantidad: kpis.aging['0-2'], fill: '#D4EDDA' },
@@ -67,7 +67,7 @@ export default function DashboardMetricas() {
       tooltip: 'Casos remitidos a una instancia superior. Meta: ≤ 10%.' },
     { label: 'Tipo más frecuente', value: tipoMasFrecuente?.name ?? '—', sub: `${tipoMasFrecuente?.value ?? 0} casos`,
       d: null, inv: false, max: null,
-      tooltip: 'Tipo de caso con mayor volumen en el período (excluye Felicitaciones).' },
+      tooltip: 'Tipo de caso con mayor volumen en el período.' },
     { label: 'Área más activa', value: Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[0] ?? '—',
       sub: `${Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[1] ?? 0} casos`,
       d: null, inv: false, max: null,
