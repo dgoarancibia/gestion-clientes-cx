@@ -35,8 +35,9 @@ export function AuthProvider({ children }) {
     try {
       await signInWithPopup(auth, googleProvider)
     } catch (e) {
+      console.error('Firebase auth error:', e.code, e.message)
       if (e.code !== 'auth/popup-closed-by-user') {
-        setAuthError('Error al iniciar sesión. Intenta nuevamente.')
+        setAuthError(`Error al iniciar sesión (${e.code || 'desconocido'}). Intenta nuevamente.`)
       }
     }
   }
