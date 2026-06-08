@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useMemo, useEffect } from 'react'
+import { useAuth } from './AuthContext'
+import { registrarCargaFirestore, obtenerHistorialFirestore } from '../utils/firestoreLog'
 
 const DataContext = createContext(null)
 
 const LS_CASOS = 'cx_casos'
 const LS_CASOS_ANTERIOR = 'cx_casos_anterior'
 const LS_VENTAS = 'cx_ventas'
-const LS_LOG = 'cx_log_cargas'
 
 function leer(key, fallback) {
   try {
@@ -25,27 +26,36 @@ function guardar(key, value) {
 }
 
 export function DataProvider({ children }) {
+  const { user } = useAuth()
   const [casos, setCasosState] = useState(() => leer(LS_CASOS, []))
   const [casosAnterior, setCasosAnteriorState] = useState(() => leer(LS_CASOS_ANTERIOR, []))
   const [ventas, setVentasState] = useState(() => leer(LS_VENTAS, []))
-  const [logCargas, setLogCargas] = useState(() => leer(LS_LOG, []))
+  const [logCargas, setLogCargas] = useState([])
+  const [logCargando, setLogCargando] = useState(true)
   const [periodoDesde, setPeriodoDesde] = useState(null)
   const [periodoHasta, setPeriodoHasta] = useState(null)
   const [marcaActiva, setMarcaActiva] = useState('Todas')
   const [tipoActivo, setTipoActivo] = useState('Todos')
 
-  // Persistir en localStorage cada vez que cambian
+  // Persistir datos completos en localStorage (rápido, sin límite práctico de tamaño)
   useEffect(() => { guardar(LS_CASOS, casos) }, [casos])
   useEffect(() => { guardar(LS_CASOS_ANTERIOR, casosAnterior) }, [casosAnterior])
   useEffect(() => { guardar(LS_VENTAS, ventas) }, [ventas])
-  useEffect(() => { guardar(LS_LOG, logCargas) }, [logCargas])
 
-  // Wrappers que registran un evento en el log de cargas
-  const registrar = (tipo, cantidad, detalle) => {
-    setLogCargas(prev => [
-      { fecha: new Date().toISOString(), tipo, cantidad, detalle },
-      ...prev,
-    ].slice(0, 50)) // conserva últimos 50 eventos
+  // El historial de cargas vive en Firestore — compartido entre todo el equipo CX
+  const refrescarLog = async () => {
+    setLogCargando(true)
+    const datos = await obtenerHistorialFirestore()
+    setLogCargas(datos)
+    setLogCargando(false)
+  }
+
+  useEffect(() => { refrescarLog() }, [])
+
+  const registrar = async (tipo, cantidad, detalle) => {
+    if (!user || tipo === 'dummy') return // no contaminar el log compartido con datos de ejemplo
+    await registrarCargaFirestore({ uid: user.uid, email: user.email, tipo, cantidad, detalle })
+    refrescarLog()
   }
 
   const setCasos = (data, detalle) => {
@@ -59,6 +69,13 @@ export function DataProvider({ children }) {
   const setVentas = (data, detalle) => {
     setVentasState(data)
     registrar('ventas', data.length, detalle)
+  }
+
+  // Para cargar dummy data sin ensuciar el historial compartido
+  const setDatosDummy = ({ casos: c, casosAnterior: ca, ventas: v }) => {
+    setCasosState(c)
+    setCasosAnteriorState(ca)
+    setVentasState(v)
   }
 
   const limpiarDatos = () => {
@@ -96,12 +113,15 @@ export function DataProvider({ children }) {
     )
   }, [casosAnterior, marcaActiva, tipoActivo])
 
+  const ultimaCarga = logCargas.find(l => l.tipo === 'casos')
+
   return (
     <DataContext.Provider value={{
       casos, setCasos,
       casosAnterior, setCasosAnterior,
       ventas, setVentas,
-      logCargas,
+      setDatosDummy,
+      logCargas, logCargando, ultimaCarga,
       limpiarDatos,
       periodoDesde, setPeriodoDesde,
       periodoHasta, setPeriodoHasta,

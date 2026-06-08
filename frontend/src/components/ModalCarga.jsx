@@ -4,7 +4,7 @@ import { useData } from '../context/DataContext'
 import { parsearArchivoCasos, parsearArchivoVentas, generarPlantillaCasos, generarPlantillaVentas, detectarAdvertencias } from '../utils/fileParser'
 
 export default function ModalCarga({ onClose }) {
-  const { setCasos, setVentas, logCargas } = useData()
+  const { setCasos, setVentas, logCargas, logCargando, ultimaCarga } = useData()
   const [verHistorial, setVerHistorial] = useState(false)
   const [statusCasos, setStatusCasos] = useState(null)
   const [statusVentas, setStatusVentas] = useState(null)
@@ -64,6 +64,15 @@ export default function ModalCarga({ onClose }) {
 
         {/* Body */}
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {ultimaCarga && (
+            <div style={{ background: '#F0FAF6', border: '1px solid #D6EFE5', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle size={14} color="#085041" />
+              <p style={{ fontSize: 11, color: '#085041' }}>
+                Última carga: <strong>{ultimaCarga.detalle || 'archivo de casos'}</strong> — {ultimaCarga.cantidad} filas, por {ultimaCarga.email?.split('@')[0]} el {new Date(ultimaCarga.fecha).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
+              </p>
+            </div>
+          )}
+
           <DropZone
             label="Archivo de casos (reclamos)"
             desc="Columnas requeridas: id_caso, fecha_ingreso, estado, marca, dealer, tipo_reclamo, ejecutiva, escalado"
@@ -119,17 +128,21 @@ export default function ModalCarga({ onClose }) {
               {verHistorial ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
             {verHistorial && (
-              <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid #EBEBEB', borderRadius: 8, marginTop: 6 }}>
-                {logCargas.length === 0
+              <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #EBEBEB', borderRadius: 8, marginTop: 6 }}>
+                {logCargando
+                  ? <p style={{ fontSize: 11, color: '#B0B0AA', padding: '10px 12px' }}>Cargando historial...</p>
+                  : logCargas.length === 0
                   ? <p style={{ fontSize: 11, color: '#B0B0AA', padding: '10px 12px' }}>Sin cargas registradas todavía.</p>
                   : logCargas.map((l, i) => (
-                    <div key={i} style={{ padding: '7px 12px', borderBottom: i < logCargas.length - 1 ? '1px solid #F5F5F3' : 'none', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                    <div key={l.id || i} style={{ padding: '7px 12px', borderBottom: i < logCargas.length - 1 ? '1px solid #F5F5F3' : 'none', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                       <div>
                         <p style={{ fontSize: 11, color: '#1C1C1A', fontWeight: 500 }}>
                           {l.tipo === 'casos' ? 'Casos' : l.tipo === 'casos_anterior' ? 'Casos (periodo anterior)' : 'Ventas'}
                           {l.detalle ? ` — ${l.detalle}` : ''}
                         </p>
-                        <p style={{ fontSize: 10, color: '#9B9B96' }}>{new Date(l.fecha).toLocaleString('es-CL')}</p>
+                        <p style={{ fontSize: 10, color: '#9B9B96' }}>
+                          {new Date(l.fecha).toLocaleString('es-CL')} · {l.email?.split('@')[0] || 'usuario'}
+                        </p>
                       </div>
                       <span style={{ fontSize: 10, fontWeight: 600, color: '#6B6B67', background: '#F5F5F3', borderRadius: 20, padding: '2px 8px', height: 'fit-content' }}>{l.cantidad} filas</span>
                     </div>

@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser && ALLOWED_EMAILS.includes(firebaseUser.email)) {
         setUser({
+          uid: firebaseUser.uid,
           name: firebaseUser.displayName,
           email: firebaseUser.email,
           photo: firebaseUser.photoURL,
