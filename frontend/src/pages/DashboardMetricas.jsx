@@ -78,7 +78,7 @@ export default function DashboardMetricas() {
     { label: 'ART', value: kpis.art != null ? `${kpis.art}` : '—', sub: 'días promedio',
       d: kpisAnt?.art != null && kpis.art != null ? delta(kpis.art, kpisAnt.art) : null, inv: true, max: 20,
       badge: kpis.art != null ? { ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 10 ? 'En riesgo' : 'Fuera SLA' } : null,
-      tooltip: 'Antigüedad promedio de resolución en días. Meta: ≤ 5 días. Baja es positiva.' },
+      tooltip: 'Promedio de días hábiles entre ingreso y cierre, calculado SOLO con casos cerrados que tienen fecha de cierre registrada. Meta: ≤ 5 días. Baja es positiva.' },
     { label: 'Total abierto', value: kpis.abiertos + (kpisAnt?.abiertos ?? 0), sub: 'backlog anterior + ingresado',
       d: null, inv: true, max: (kpis.abiertos + (kpisAnt?.abiertos ?? 0)) || 100,
       tooltip: 'Suma del backlog activo del período anterior más los casos ingresados ahora — todo lo que sigue abierto.' },
@@ -222,7 +222,7 @@ export default function DashboardMetricas() {
 
       {cerradosSinFechaCierre.length > 0 && (
         <Card title={`Casos cerrados sin fecha de cierre (${cerradosSinFechaCierre.length})`}
-          tooltip='Estos casos están cerrados pero no tienen "Fecha de cierre" registrada en el CRM. Pide a la ejecutiva a cargo que la complete — así el ART se calcula con datos exactos en vez de usar la antigüedad como respaldo.'>
+          tooltip='Estos casos están cerrados pero no tienen "Fecha de cierre" registrada en el CRM, por lo que quedan FUERA del cálculo del ART (no se puede saber cuánto tardaron realmente). Pide a la ejecutiva a cargo que la complete.'>
           <div style={{ overflowY: 'auto', maxHeight: 220, marginTop: 8 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
               <thead style={{ position: 'sticky', top: 0 }}>

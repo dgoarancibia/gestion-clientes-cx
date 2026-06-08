@@ -27,20 +27,15 @@ export function calcularKPIs(casos) {
   const cerrados = casos.filter(esCerrado)
   const abiertos = casos.filter(esAbierto)
 
-  // ART — días hábiles entre ingreso y cierre (solo cerrados con fecha cierre)
-  const arts = cerrados
-    .filter(c => c.fecha_cierre && c.fecha_ingreso)
+  // ART — días hábiles entre ingreso y cierre. SOLO casos cerrados CON fecha de cierre real
+  // (la "antigüedad" no sirve de respaldo: en casos cerrados sin fecha de cierre suele
+  // representar días desde el ingreso hasta hoy, no hasta el cierre real — distorsiona el promedio)
+  const artsCasos = cerrados.filter(c => c.fecha_cierre && c.fecha_ingreso)
+  const arts = artsCasos
     .map(c => diasHabiles(c.fecha_ingreso, c.fecha_cierre))
     .filter(d => d >= 0 && d < 365)
   const art = arts.length ? arts.reduce((a, b) => a + b, 0) / arts.length : null
-
-  // ART alternativo con antigüedad si no hay fecha cierre
-  const antVals = cerrados
-    .filter(c => c.antigüedad != null)
-    .map(c => c.antigüedad)
-  const artAnt = antVals.length ? antVals.reduce((a, b) => a + b, 0) / antVals.length : null
-
-  const artFinal = art ?? artAnt
+  const artFinal = art
 
   // Tasa escalamiento
   const escalados = casos.filter(c => c.escalado)
@@ -83,15 +78,12 @@ export function calcularKPIs(casos) {
     const nombre = c.ejecutiva || 'Sin asignar'
     if (!ejecutivaMap[nombre]) ejecutivaMap[nombre] = { asignados: 0, cerrados: 0, arts: [] }
     ejecutivaMap[nombre].asignados++
-    if (esCerrado(c) && c.fecha_cierre && c.fecha_ingreso) {
-      const d = diasHabiles(c.fecha_ingreso, c.fecha_cierre)
-      if (d >= 0 && d < 365) {
-        ejecutivaMap[nombre].cerrados++
-        ejecutivaMap[nombre].arts.push(d)
-      }
-    } else if (esCerrado(c) && c.antigüedad != null) {
+    if (esCerrado(c)) {
       ejecutivaMap[nombre].cerrados++
-      ejecutivaMap[nombre].arts.push(c.antigüedad)
+      if (c.fecha_cierre && c.fecha_ingreso) {
+        const d = diasHabiles(c.fecha_ingreso, c.fecha_cierre)
+        if (d >= 0 && d < 365) ejecutivaMap[nombre].arts.push(d)
+      }
     }
   }
 

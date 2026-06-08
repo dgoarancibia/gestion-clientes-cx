@@ -103,7 +103,7 @@ export function detectarAdvertencias(casos) {
   const cerrados = casos.filter(c => c.estado_caso === 'Problema resuelto' || c.fecha_cierre)
   const cerradosSinFechaCierre = casos.filter(c => !c.fecha_cierre && (c.estado === 'Cerrado' || c.estado === 'Problema resuelto' || c.estado === 'Problema resuelto - Sin Encuesta' || c.estado === 'Termina Caso'))
   if (cerradosSinFechaCierre.length > 0) {
-    avisos.push(`${cerradosSinFechaCierre.length} casos cerrados sin "Fecha Cierre" — el ART se calcula con "Antigüedad del caso" como respaldo, pero registrar la fecha de cierre da un dato más preciso.`)
+    avisos.push(`${cerradosSinFechaCierre.length} casos cerrados sin "Fecha Cierre" — quedan FUERA del cálculo del ART porque no se puede saber cuánto tiempo realmente tomó cerrarlos. Registrar la fecha de cierre es clave para que el ART sea exacto.`)
   }
 
   const sinAntiguedad = casos.filter(c => c.antigüedad == null).length
