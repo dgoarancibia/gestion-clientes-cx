@@ -185,15 +185,15 @@ export default function DashboardMetricas() {
           </thead>
           <tbody>
             {kpis.ejecutivas.sort((a, b) => b.asignados - a.asignados).map((e, i) => {
-              const vsProm = kpis.artPromedio > 0 ? ((e.art - kpis.artPromedio) / kpis.artPromedio) * 100 : 0
-              const artSem = vsProm > 20 ? { bg: '#F8D7DA', color: '#721C24' } : vsProm > 0 ? { bg: '#FFF3CD', color: '#856404' } : { bg: '#D4EDDA', color: '#155724' }
+              const vsProm = (e.art != null && kpis.artPromedio > 0) ? ((e.art - kpis.artPromedio) / kpis.artPromedio) * 100 : 0
+              const artSem = e.art == null ? { bg: '#F0F0EE', color: '#9B9B96' } : vsProm > 20 ? { bg: '#F8D7DA', color: '#721C24' } : vsProm > 0 ? { bg: '#FFF3CD', color: '#856404' } : { bg: '#D4EDDA', color: '#155724' }
               return (
                 <tr key={e.nombre} style={{ background: i % 2 === 0 ? '#FFFFFF' : '#FAFAF9', borderBottom: '1px solid #F5F5F3' }}>
                   <td style={{ padding: '8px 12px', color: '#1C1C1A', fontWeight: 500 }}>{e.nombre}</td>
                   <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1C1C1A' }}>{e.asignados}</td>
                   <td style={{ padding: '8px 12px', color: '#6B6B67' }}>{e.cerrados}</td>
                   <td style={{ padding: '8px 12px' }}>
-                    <span style={{ background: artSem.bg, color: artSem.color, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{e.art.toFixed(1)}</span>
+                    <span style={{ background: artSem.bg, color: artSem.color, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{e.art != null ? e.art.toFixed(1) : '—'}</span>
                   </td>
                   <td style={{ padding: '8px 12px', color: '#6B6B67' }}>{e.pct.toFixed(1)}%</td>
                   <td style={{ padding: '8px 12px', minWidth: 120 }}>
