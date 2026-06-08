@@ -1,12 +1,53 @@
 import { useData } from '../context/DataContext'
 import { SlidersHorizontal } from 'lucide-react'
 
+function fmt(d) { return d.toISOString().split('T')[0] }
+
+function rangoPreset(key) {
+  const hoy = new Date()
+  const y = hoy.getFullYear()
+  const m = hoy.getMonth()
+
+  switch (key) {
+    case 'mes_actual':
+      return [fmt(new Date(y, m, 1)), fmt(new Date(y, m + 1, 0))]
+    case 'mes_anterior':
+      return [fmt(new Date(y, m - 1, 1)), fmt(new Date(y, m, 0))]
+    case 'trimestre_actual': {
+      const qStart = Math.floor(m / 3) * 3
+      return [fmt(new Date(y, qStart, 1)), fmt(new Date(y, qStart + 3, 0))]
+    }
+    case 'anio_actual':
+      return [fmt(new Date(y, 0, 1)), fmt(new Date(y, 11, 31))]
+    case 'anio_anterior':
+      return [fmt(new Date(y - 1, 0, 1)), fmt(new Date(y - 1, 11, 31))]
+    default:
+      return [null, null]
+  }
+}
+
+const PRESETS = [
+  { key: '', label: 'Personalizado' },
+  { key: 'mes_actual', label: 'Mes actual' },
+  { key: 'mes_anterior', label: 'Mes anterior' },
+  { key: 'trimestre_actual', label: 'Trimestre actual' },
+  { key: 'anio_actual', label: 'Año actual' },
+  { key: 'anio_anterior', label: 'Año anterior' },
+]
+
 export default function FilterBar() {
   const { casosCargados, periodoDesde, setPeriodoDesde, periodoHasta, setPeriodoHasta, marcas, marcaActiva, setMarcaActiva } = useData()
 
   if (!casosCargados) return null
 
   const activeCount = [periodoDesde, periodoHasta, marcaActiva !== 'Todas'].filter(Boolean).length
+
+  const handlePreset = (key) => {
+    if (!key) return
+    const [desde, hasta] = rangoPreset(key)
+    setPeriodoDesde(desde)
+    setPeriodoHasta(hasta)
+  }
 
   return (
     <div style={{
@@ -30,6 +71,12 @@ export default function FilterBar() {
       <div style={{ width: 1, height: 20, background: '#EBEBEB' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <FilterChip label="Periodo">
+          <select defaultValue="" onChange={e => handlePreset(e.target.value)}
+            style={{ fontSize: 12, color: '#1C1C1A', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer' }}>
+            {PRESETS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+        </FilterChip>
         <FilterChip label="Desde">
           <input type="date" value={periodoDesde || ''} onChange={e => setPeriodoDesde(e.target.value || null)}
             style={{ fontSize: 12, color: '#1C1C1A', border: 'none', background: 'transparent', outline: 'none', cursor: 'pointer' }} />
