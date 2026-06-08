@@ -30,6 +30,8 @@ export default function DashboardMetricas() {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
 
+  const tipoMasFrecuente = tipoPieData.filter(t => t.name !== 'Felicitaciones')[0]
+
   const agingData = [
     { rango: '0–2 días', cantidad: kpis.aging['0-2'], fill: '#D4EDDA' },
     { rango: '3–5 días', cantidad: kpis.aging['3-5'], fill: '#FFF3CD' },
@@ -63,9 +65,9 @@ export default function DashboardMetricas() {
       d: kpisAnt ? delta(kpis.tasaEscalamiento, kpisAnt.tasaEscalamiento) : null, inv: true, max: 30,
       badge: { ...semaforoEscalamiento(kpis.tasaEscalamiento), label: kpis.tasaEscalamiento <= 10 ? 'Normal' : kpis.tasaEscalamiento <= 20 ? 'Elevado' : 'Crítico' },
       tooltip: 'Casos remitidos a una instancia superior. Meta: ≤ 10%.' },
-    { label: 'Tipo más frecuente', value: tipoPieData[0]?.name ?? '—', sub: `${tipoPieData[0]?.value ?? 0} casos`,
+    { label: 'Tipo más frecuente', value: tipoMasFrecuente?.name ?? '—', sub: `${tipoMasFrecuente?.value ?? 0} casos`,
       d: null, inv: false, max: null,
-      tooltip: 'Tipo de caso con mayor volumen en el período.' },
+      tooltip: 'Tipo de caso con mayor volumen en el período (excluye Felicitaciones).' },
     { label: 'Área más activa', value: Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[0] ?? '—',
       sub: `${Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[1] ?? 0} casos`,
       d: null, inv: false, max: null,
@@ -266,7 +268,11 @@ function KPICardC({ label, value, sub, tooltip, badge, alert, delta: d, deltaInv
           </div>
         )}
       </div>
-      <p style={{ fontSize: 26, fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1, margin: '6px 0 6px' }}>{value}</p>
+      <p style={{
+        fontSize: typeof value === 'string' && value.length > 8 ? 16 : 26,
+        fontWeight: 700, color: alert ? '#721C24' : '#1C1C1A', lineHeight: 1.15, margin: '6px 0 6px',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }} title={typeof value === 'string' ? value : undefined}>{value}</p>
       {pct !== null && (
         <div style={{ background: '#F0F0EE', borderRadius: 4, height: 4, marginBottom: 8, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: barColor, transition: 'width 0.4s ease' }} />
