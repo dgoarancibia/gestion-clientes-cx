@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { useData } from '../context/DataContext'
-import { calcularKPIs, semaforoART, semaforoEscalamiento } from '../utils/kpis'
+import { calcularKPIs, semaforoART } from '../utils/kpis'
 import { useState } from 'react'
 import { HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
@@ -32,6 +32,10 @@ export default function DashboardMetricas() {
 
   const tipoMasFrecuente = tipoPieData[0]
 
+  const cerradosSinFechaCierre = casosFiltrados.filter(c =>
+    !c.fecha_cierre && (c.estado === 'Cerrado' || c.estado === 'Problema resuelto' || c.estado === 'Problema resuelto - Sin Encuesta' || c.estado === 'Termina Caso')
+  ).length
+
   const agingData = [
     { rango: '0–2 días', cantidad: kpis.aging['0-2'], fill: '#D4EDDA' },
     { rango: '3–5 días', cantidad: kpis.aging['3-5'], fill: '#FFF3CD' },
@@ -61,10 +65,9 @@ export default function DashboardMetricas() {
       d: kpisAnt?.art != null && kpis.art != null ? delta(kpis.art, kpisAnt.art) : null, inv: true, max: 20,
       badge: kpis.art != null ? { ...semaforoART(kpis.art), label: kpis.art <= 5 ? 'En SLA' : kpis.art <= 10 ? 'En riesgo' : 'Fuera SLA' } : null,
       tooltip: 'Antigüedad promedio de resolución en días. Meta: ≤ 5 días. Baja es positiva.' },
-    { label: 'Escalamiento', value: `${kpis.tasaEscalamiento}%`, sub: `${kpis.escalados} casos`,
-      d: kpisAnt ? delta(kpis.tasaEscalamiento, kpisAnt.tasaEscalamiento) : null, inv: true, max: 30,
-      badge: { ...semaforoEscalamiento(kpis.tasaEscalamiento), label: kpis.tasaEscalamiento <= 10 ? 'Normal' : kpis.tasaEscalamiento <= 20 ? 'Elevado' : 'Crítico' },
-      tooltip: 'Casos remitidos a una instancia superior. Meta: ≤ 10%.' },
+    { label: 'Total abierto', value: kpis.abiertos + (kpisAnt?.abiertos ?? 0), sub: 'backlog anterior + ingresado',
+      d: null, inv: true, max: (kpis.abiertos + (kpisAnt?.abiertos ?? 0)) || 100,
+      tooltip: 'Suma del backlog activo del período anterior más los casos ingresados ahora — todo lo que sigue abierto.' },
     { label: 'Tipo más frecuente', value: tipoMasFrecuente?.name ?? '—', sub: `${tipoMasFrecuente?.value ?? 0} casos`,
       d: null, inv: false, max: null,
       tooltip: 'Tipo de caso con mayor volumen en el período.' },
@@ -85,7 +88,7 @@ export default function DashboardMetricas() {
       </div>
 
       {/* Fila 2 — Marca + Tipos + Aging (3 columnas iguales) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.1fr 1.1fr', gap: 12 }}>
         <Card title="Distribución por marca">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
             {marcaData.map((m, i) => (
@@ -102,22 +105,22 @@ export default function DashboardMetricas() {
         </Card>
 
         <Card title="Tipos de reclamo">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-            <ResponsiveContainer width={90} height={90}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 6 }}>
+            <ResponsiveContainer width={150} height={150}>
               <PieChart>
-                <Pie data={tipoPieData} cx={42} cy={42} innerRadius={24} outerRadius={40} dataKey="value" paddingAngle={2}>
+                <Pie data={tipoPieData} cx={70} cy={70} innerRadius={42} outerRadius={68} dataKey="value" paddingAngle={2}>
                   {tipoPieData.map((_, i) => <Cell key={i} fill={COLORES[i % COLORES.length]} />)}
                 </Pie>
                 <Tooltip formatter={(v, n) => [`${v} casos`, n]} />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
               {tipoPieData.map((d, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: 2, background: COLORES[i % COLORES.length], flexShrink: 0 }} />
-                  <span style={{ fontSize: 10, color: '#4A4A46', flex: 1, textTransform: 'capitalize' }}>{d.name}</span>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: '#1C1C1A' }}>{d.value}</span>
-                  <span style={{ fontSize: 10, color: '#9B9B96', width: 24, textAlign: 'right' }}>{Math.round(d.value / kpis.total * 100)}%</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: COLORES[i % COLORES.length], flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: '#4A4A46', flex: 1, textTransform: 'capitalize' }}>{d.name}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1C1C1A' }}>{d.value}</span>
+                  <span style={{ fontSize: 11, color: '#9B9B96', width: 30, textAlign: 'right' }}>{Math.round(d.value / kpis.total * 100)}%</span>
                 </div>
               ))}
             </div>
@@ -127,12 +130,12 @@ export default function DashboardMetricas() {
         <Card title="Aging — casos abiertos" tooltip="+10 días sin cierre requiere atención inmediata.">
           {agingData.every(d => d.cantidad === 0)
             ? <Empty text="Sin casos abiertos" good />
-            : <ResponsiveContainer width="100%" height={130}>
-                <BarChart data={agingData} layout="vertical" margin={{ left: 4, right: 20, top: 8, bottom: 0 }}>
+            : <ResponsiveContainer width="100%" height={210}>
+                <BarChart data={agingData} layout="vertical" margin={{ left: 4, right: 28, top: 8, bottom: 0 }} barCategoryGap="28%">
                   <CartesianGrid horizontal={false} stroke="#F0F0EE" />
-                  <XAxis type="number" tick={{ fontSize: 9, fill: '#9B9B96' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="rango" tick={{ fontSize: 10, fill: '#4A4A46' }} axisLine={false} tickLine={false} width={58} />
-                  <Tooltip formatter={v => [`${v} casos`]} contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EBEBEB' }} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: '#9B9B96' }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="rango" tick={{ fontSize: 12, fill: '#4A4A46' }} axisLine={false} tickLine={false} width={64} />
+                  <Tooltip formatter={v => [`${v} casos`]} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #EBEBEB' }} />
                   <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
                     {agingData.map((d, i) => <Cell key={i} fill={d.fill} />)}
                   </Bar>
@@ -147,7 +150,7 @@ export default function DashboardMetricas() {
         <Card title={`Casos críticos — +10 días (${kpis.aging['+10'].length})`}>
           {kpis.aging['+10'].length === 0
             ? <Empty text="Sin casos críticos" good />
-            : <div style={{ overflowY: 'auto', maxHeight: 200, marginTop: 8 }}>
+            : <div style={{ overflowY: 'auto', maxHeight: 360, marginTop: 8 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead style={{ position: 'sticky', top: 0 }}>
                     <tr style={{ background: '#F7F7F5' }}>
@@ -209,6 +212,14 @@ export default function DashboardMetricas() {
         <p style={{ fontSize: 11, color: '#9B9B96', marginTop: 8 }}>El ART individual puede variar según la complejidad de los casos asignados.</p>
       </Card>
       </div>
+
+      {cerradosSinFechaCierre > 0 && (
+        <div style={{ background: '#FFF8E8', border: '1px solid #F5E3B3', borderRadius: 10, padding: '10px 16px' }}>
+          <p style={{ fontSize: 12, color: '#856404' }}>
+            ⚠️ <strong>{cerradosSinFechaCierre}</strong> casos cerrados sin "Fecha de cierre" registrada — el ART se calcula con la antigüedad como respaldo, pero registrar la fecha de cierre da un dato más preciso.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
