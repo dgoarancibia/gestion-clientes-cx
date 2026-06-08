@@ -76,6 +76,44 @@ export async function parsearArchivoVentas(file) {
   })).filter(r => r.mes && r.marca)
 }
 
+// Detecta campos clave que vienen vacíos/incompletos en la carga real,
+// para avisarle al equipo qué debería estar completando en el CRM.
+export function detectarAdvertencias(casos) {
+  const total = casos.length
+  if (!total) return []
+
+  const pct = (n) => Math.round((n / total) * 100)
+  const avisos = []
+
+  const sinEjecutiva = casos.filter(c => !c.ejecutiva).length
+  if (sinEjecutiva > 0) {
+    avisos.push(`${sinEjecutiva} casos (${pct(sinEjecutiva)}%) sin "Ejecutivo Centro Cliente" asignado — afecta la tabla de Performance del equipo.`)
+  }
+
+  const sinMotivo = casos.filter(c => !c.motivo).length
+  if (sinMotivo > 0) {
+    avisos.push(`${sinMotivo} casos (${pct(sinMotivo)}%) sin "Motivo" registrado — afecta la distribución por motivo.`)
+  }
+
+  const sinArea = casos.filter(c => !c.area).length
+  if (sinArea > 0) {
+    avisos.push(`${sinArea} casos (${pct(sinArea)}%) sin "Área responsable" — afecta el cálculo de "Área más activa".`)
+  }
+
+  const cerrados = casos.filter(c => c.estado_caso === 'Problema resuelto' || c.fecha_cierre)
+  const cerradosSinFechaCierre = casos.filter(c => !c.fecha_cierre && (c.estado === 'Cerrado' || c.estado === 'Problema resuelto' || c.estado === 'Problema resuelto - Sin Encuesta' || c.estado === 'Termina Caso'))
+  if (cerradosSinFechaCierre.length > 0) {
+    avisos.push(`${cerradosSinFechaCierre.length} casos cerrados sin "Fecha Cierre" — el ART se calcula con "Antigüedad del caso" como respaldo, pero registrar la fecha de cierre da un dato más preciso.`)
+  }
+
+  const sinAntiguedad = casos.filter(c => c.antigüedad == null).length
+  if (sinAntiguedad > 0) {
+    avisos.push(`${sinAntiguedad} casos (${pct(sinAntiguedad)}%) sin "Antigüedad del caso" — sin este dato no se puede calcular el ART ni el aging.`)
+  }
+
+  return avisos
+}
+
 export function generarPlantillaCasos() {
   const h = 'Número de caso,Fecha de creación,Marca,Fase del caso,Tipo de caso,Área responsable,Concesionario,Ejecutivo Centro Cliente,Motivo,Sub-Motivo,Origen,Antigüedad del caso,Primera respuesta enviada,Estado de SLA de la primera respuesta,Se ha remitido a una instancia superior,Estado del Caso,Fecha Cierre'
   const rows = [

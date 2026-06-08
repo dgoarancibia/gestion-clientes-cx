@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { X, Upload, CheckCircle, AlertCircle, Download } from 'lucide-react'
+import { X, Upload, CheckCircle, AlertCircle, Download, AlertTriangle } from 'lucide-react'
 import { useData } from '../context/DataContext'
-import { parsearArchivoCasos, parsearArchivoVentas, generarPlantillaCasos, generarPlantillaVentas } from '../utils/fileParser'
+import { parsearArchivoCasos, parsearArchivoVentas, generarPlantillaCasos, generarPlantillaVentas, detectarAdvertencias } from '../utils/fileParser'
 
 export default function ModalCarga({ onClose }) {
   const { setCasos, setVentas } = useData()
@@ -11,12 +11,14 @@ export default function ModalCarga({ onClose }) {
   const [errorVentas, setErrorVentas] = useState(null)
   const [countCasos, setCountCasos] = useState(0)
   const [countVentas, setCountVentas] = useState(0)
+  const [advertencias, setAdvertencias] = useState([])
 
   const handleCasos = async (file) => {
     setErrorCasos(null); setStatusCasos('loading')
     try {
       const data = await parsearArchivoCasos(file)
       setCasos(data); setCountCasos(data.length); setStatusCasos('ok')
+      setAdvertencias(detectarAdvertencias(data))
     } catch (e) { setStatusCasos(null); setErrorCasos(e.message) }
   }
 
@@ -78,6 +80,21 @@ export default function ModalCarga({ onClose }) {
             error={errorVentas}
             optional
           />
+
+          {advertencias.length > 0 && (
+            <div style={{ background: '#FFF8E8', border: '1px solid #F5E3B3', borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <AlertTriangle size={14} color="#856404" />
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#856404' }}>Datos incompletos detectados</p>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {advertencias.map((a, i) => (
+                  <li key={i} style={{ fontSize: 11, color: '#6B5A2E', lineHeight: 1.4 }}>{a}</li>
+                ))}
+              </ul>
+              <p style={{ fontSize: 10, color: '#9B8A5C' }}>Pídele a quien carga los casos en el CRM que complete estos campos para que el reporte sea más preciso.</p>
+            </div>
+          )}
 
           {/* Plantillas */}
           <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
