@@ -44,11 +44,14 @@ export default function ModalCarga({ onClose }) {
       position: 'fixed', inset: 0, zIndex: 500,
       background: 'rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 20,
     }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{
         background: '#FFFFFF', borderRadius: 14,
-        width: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        width: 480, maxWidth: '100%', maxHeight: '90vh',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
         overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid #EBEBEB' }}>
@@ -64,7 +67,7 @@ export default function ModalCarga({ onClose }) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
           {ultimaCarga && (
             <div style={{ background: '#F0FAF6', border: '1px solid #D6EFE5', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <CheckCircle size={14} color="#085041" />
@@ -129,7 +132,7 @@ export default function ModalCarga({ onClose }) {
 
         {/* Footer */}
         {(statusCasos === 'ok') && (
-          <div style={{ padding: '12px 20px', borderTop: '1px solid #EBEBEB', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid #EBEBEB', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
             <button onClick={onClose}
               style={{ fontSize: 13, fontWeight: 500, color: '#fff', background: '#1C1C1A', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer' }}
               onMouseOver={e => e.currentTarget.style.background = '#3A3A36'}

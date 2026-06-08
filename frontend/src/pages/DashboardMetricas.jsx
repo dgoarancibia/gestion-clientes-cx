@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { useData } from '../context/DataContext'
-import { calcularKPIs, semaforoART } from '../utils/kpis'
+import { calcularKPIs, semaforoART, esCerrado } from '../utils/kpis'
 import { useState } from 'react'
 import { HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
@@ -15,9 +15,22 @@ function delta(actual, anterior) {
 const VARIANTE_A = false
 
 export default function DashboardMetricas() {
-  const { casosFiltrados, casosAnteriorFiltrados } = useData()
+  const { casos, casosFiltrados, casosAnteriorFiltrados, periodoDesde, periodoHasta, marcaActiva, tipoActivo } = useData()
   const kpis = calcularKPIs(casosFiltrados)
   const kpisAnt = casosAnteriorFiltrados?.length ? calcularKPIs(casosAnteriorFiltrados) : null
+
+  // Cerrados EN el período seleccionado, según su fecha de cierre (independiente de cuándo se crearon)
+  const cerradosEnPeriodo = casos.filter(c => {
+    if (!c.fecha_cierre) return false
+    if (marcaActiva !== 'Todas' && c.marca !== marcaActiva) return false
+    if (tipoActivo !== 'Todos' && c.tipo_caso !== tipoActivo) return false
+    const fc = new Date(c.fecha_cierre)
+    if (periodoDesde && fc < new Date(periodoDesde)) return false
+    if (periodoHasta && fc > new Date(periodoHasta + 'T23:59:59')) return false
+    return true
+  })
+  // De los casos ingresados en el período, cuántos ya se cerraron (sin importar cuándo)
+  const ingresadosYaCerrados = casosFiltrados.filter(esCerrado).length
 
   const marcaData = Object.entries(
     casosFiltrados.reduce((acc, c) => { acc[c.marca] = (acc[c.marca] || 0) + 1; return acc }, {})
@@ -29,8 +42,6 @@ export default function DashboardMetricas() {
   const tipoPieData = Object.entries(kpis.porTipo)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
-
-  const tipoMasFrecuente = tipoPieData[0]
 
   const cerradosSinFechaCierre = casosFiltrados.filter(c =>
     !c.fecha_cierre && (c.estado === 'Cerrado' || c.estado === 'Problema resuelto' || c.estado === 'Problema resuelto - Sin Encuesta' || c.estado === 'Termina Caso')
@@ -51,9 +62,12 @@ export default function DashboardMetricas() {
     { label: 'Casos ingresados', value: kpis.total, sub: 'En el período',
       d: delta(kpis.total, kpisAnt?.total), inv: false, max: kpisAnt?.total ?? 200,
       tooltip: 'Total de casos recibidos en el período, independiente de su estado.' },
-    { label: 'Casos cerrados', value: kpis.cerrados, sub: `${pctCerrados}% del total`,
-      d: delta(kpis.cerrados, kpisAnt?.cerrados), inv: false, max: kpis.total,
-      tooltip: 'Casos en fase cerrada (Cerrado, Problema resuelto). Alza es positiva.' },
+    { label: 'Cerrados en el período', value: cerradosEnPeriodo.length, sub: 'según fecha de cierre',
+      d: null, inv: false, max: kpis.total,
+      tooltip: 'Casos cuya FECHA DE CIERRE cae dentro del período filtrado, sin importar cuándo ingresaron. Mide la productividad de cierre del equipo en el período.' },
+    { label: 'De lo ingresado, cerrado', value: ingresadosYaCerrados, sub: `${pctCerrados}% de ${kpis.total}`,
+      d: delta(ingresadosYaCerrados, kpisAnt?.cerrados), inv: false, max: kpis.total,
+      tooltip: 'De los casos que ingresaron en el período, cuántos ya están cerrados (en cualquier momento, no solo en el período).' },
     { label: 'Backlog activo', value: kpis.abiertos, sub: 'En gestión',
       d: delta(kpis.abiertos, kpisAnt?.abiertos), inv: true, max: 100, alert: kpis.abiertos > 50,
       tooltip: 'Casos aún abiertos en cualquier fase activa. Baja es positiva.' },
@@ -68,20 +82,13 @@ export default function DashboardMetricas() {
     { label: 'Total abierto', value: kpis.abiertos + (kpisAnt?.abiertos ?? 0), sub: 'backlog anterior + ingresado',
       d: null, inv: true, max: (kpis.abiertos + (kpisAnt?.abiertos ?? 0)) || 100,
       tooltip: 'Suma del backlog activo del período anterior más los casos ingresados ahora — todo lo que sigue abierto.' },
-    { label: 'Tipo más frecuente', value: tipoMasFrecuente?.name ?? '—', sub: `${tipoMasFrecuente?.value ?? 0} casos`,
-      d: null, inv: false, max: null,
-      tooltip: 'Tipo de caso con mayor volumen en el período.' },
-    { label: 'Área más activa', value: Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[0] ?? '—',
-      sub: `${Object.entries(kpis.porArea).sort((a,b) => b[1]-a[1])[0]?.[1] ?? 0} casos`,
-      d: null, inv: false, max: null,
-      tooltip: 'Área responsable con más casos en el período.' },
   ]
 
   return (
     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Fila 1 — 8 KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 160px))', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 180px))', gap: 10 }}>
         {kpisData.map((k, i) => (
           <KPI key={i} {...k} delta={k.d} deltaInvert={k.inv} />
         ))}

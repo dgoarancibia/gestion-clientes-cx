@@ -1,5 +1,7 @@
 import { useData } from '../context/DataContext'
+import { useNav } from '../context/NavContext'
 import { SlidersHorizontal } from 'lucide-react'
+import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_COLLAPSED } from './Sidebar'
 
 function fmt(d) { return d.toISOString().split('T')[0] }
 
@@ -37,6 +39,8 @@ const PRESETS = [
 
 export default function FilterBar() {
   const { casosCargados, periodoDesde, setPeriodoDesde, periodoHasta, setPeriodoHasta, marcas, marcaActiva, setMarcaActiva, tipos, tipoActivo, setTipoActivo } = useData()
+  const { collapsed } = useNav()
+  const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH
 
   if (!casosCargados) return null
 
@@ -51,7 +55,7 @@ export default function FilterBar() {
 
   return (
     <div style={{
-      position: 'fixed', top: 56, left: 220, right: 0, zIndex: 90,
+      position: 'fixed', top: 56, left: sidebarWidth, right: 0, zIndex: 90, transition: 'left 0.15s ease',
       background: '#FFFFFF', borderBottom: '1px solid #EBEBEB',
       padding: '0 24px', height: 48,
       display: 'flex', alignItems: 'center', gap: 16,

@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useNav } from '../context/NavContext'
 import { Download, LogOut, Upload } from 'lucide-react'
 import ModalCarga from './ModalCarga'
+import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_COLLAPSED } from './Sidebar'
 
 export default function TopBar({ title, subtitle, onExport }) {
   const { user, logout } = useAuth()
+  const { collapsed } = useNav()
+  const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH
   const [showModal, setShowModal] = useState(false)
 
   return (
     <>
       <header style={{
-        position: 'fixed', top: 0, left: 220, right: 0,
+        position: 'fixed', top: 0, left: sidebarWidth, right: 0, transition: 'left 0.15s ease',
         height: 56, background: '#1C1C1A',
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',

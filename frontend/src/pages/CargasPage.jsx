@@ -4,11 +4,14 @@ import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import { LogOut } from 'lucide-react'
 import { parsearArchivoCasos, parsearArchivoVentas, generarPlantillaCasos, generarPlantillaVentas, detectarAdvertencias } from '../utils/fileParser'
-import Sidebar from '../components/Sidebar'
+import { useNav } from '../context/NavContext'
+import Sidebar, { SIDEBAR_WIDTH, SIDEBAR_WIDTH_COLLAPSED } from '../components/Sidebar'
 
 export default function CargasPage() {
   const { setCasos, setVentas, logCargas, logCargando, ultimaCarga } = useData()
   const { user, logout } = useAuth()
+  const { collapsed } = useNav()
+  const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH
   const [statusCasos, setStatusCasos] = useState(null)
   const [statusVentas, setStatusVentas] = useState(null)
   const [errorCasos, setErrorCasos] = useState(null)
@@ -44,7 +47,7 @@ export default function CargasPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F5F3' }}>
       <Sidebar />
-      <div style={{ marginLeft: 220, flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ marginLeft: sidebarWidth, flex: 1, display: 'flex', flexDirection: 'column', transition: 'margin-left 0.15s ease' }}>
         <header style={{
           height: 56, background: '#1C1C1A', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', padding: '0 24px', borderBottom: '1px solid #2E2E2B',

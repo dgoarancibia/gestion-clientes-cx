@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
 import { useData } from '../context/DataContext'
+import { useNav } from '../context/NavContext'
 import { generarDatosDummy } from '../utils/dummyData'
 import { calcularKPIs } from '../utils/kpis'
-import Sidebar from '../components/Sidebar'
+import Sidebar, { SIDEBAR_WIDTH, SIDEBAR_WIDTH_COLLAPSED } from '../components/Sidebar'
 import TopBar from '../components/TopBar'
 import FilterBar from '../components/FilterBar'
 import DashboardMetricas from './DashboardMetricas'
@@ -29,6 +30,8 @@ function exportarCSV(casosFiltrados, kpis) {
 
 export default function DashboardPage() {
   const { casosCargados, setDatosDummy, casosFiltrados } = useData()
+  const { collapsed } = useNav()
+  const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH
 
   useEffect(() => {
     if (!casosCargados) {
@@ -39,14 +42,14 @@ export default function DashboardPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F5F3' }}>
       <Sidebar />
-      <div style={{ marginLeft: 220, flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ marginLeft: sidebarWidth, flex: 1, display: 'flex', flexDirection: 'column', transition: 'margin-left 0.15s ease' }}>
         <TopBar
           title="Reclamos"
           subtitle="Análisis de casos del período seleccionado"
           onExport={casosCargados ? () => exportarCSV(casosFiltrados, calcularKPIs(casosFiltrados)) : null}
         />
         <FilterBar />
-        <main style={{ paddingTop: casosCargados ? 104 : 56, overflowY: 'auto' }}>
+        <main style={{ paddingTop: casosCargados ? 104 : 56, paddingBottom: 24 }}>
           <DashboardMetricas />
         </main>
       </div>
