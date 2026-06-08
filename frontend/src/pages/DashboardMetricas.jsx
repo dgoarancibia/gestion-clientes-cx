@@ -34,7 +34,7 @@ export default function DashboardMetricas() {
 
   const cerradosSinFechaCierre = casosFiltrados.filter(c =>
     !c.fecha_cierre && (c.estado === 'Cerrado' || c.estado === 'Problema resuelto' || c.estado === 'Problema resuelto - Sin Encuesta' || c.estado === 'Termina Caso')
-  ).length
+  )
 
   const agingData = [
     { rango: '0–2 días', cantidad: kpis.aging['0-2'], fill: '#D4EDDA' },
@@ -213,12 +213,33 @@ export default function DashboardMetricas() {
       </Card>
       </div>
 
-      {cerradosSinFechaCierre > 0 && (
-        <div style={{ background: '#FFF8E8', border: '1px solid #F5E3B3', borderRadius: 10, padding: '10px 16px' }}>
-          <p style={{ fontSize: 12, color: '#856404' }}>
-            ⚠️ <strong>{cerradosSinFechaCierre}</strong> casos cerrados sin "Fecha de cierre" registrada — el ART se calcula con la antigüedad como respaldo, pero registrar la fecha de cierre da un dato más preciso.
-          </p>
-        </div>
+      {cerradosSinFechaCierre.length > 0 && (
+        <Card title={`Casos cerrados sin fecha de cierre (${cerradosSinFechaCierre.length})`}
+          tooltip='Estos casos están cerrados pero no tienen "Fecha de cierre" registrada en el CRM. Pide a la ejecutiva a cargo que la complete — así el ART se calcula con datos exactos en vez de usar la antigüedad como respaldo.'>
+          <div style={{ overflowY: 'auto', maxHeight: 220, marginTop: 8 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead style={{ position: 'sticky', top: 0 }}>
+                <tr style={{ background: '#F7F7F5' }}>
+                  {['ID', 'Tipo', 'Ejecutiva', 'Estado'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '5px 10px', fontWeight: 500, color: '#6B6B67', fontSize: 10 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cerradosSinFechaCierre.map((c, i) => (
+                  <tr key={c.id_caso} style={{ background: i % 2 === 0 ? '#FFFFFF' : '#FAFAF9' }}>
+                    <td style={{ padding: '4px 10px', color: '#1C1C1A', fontWeight: 500 }}>{c.id_caso}</td>
+                    <td style={{ padding: '4px 10px', color: '#6B6B67', textTransform: 'capitalize' }}>{c.tipo_reclamo}</td>
+                    <td style={{ padding: '4px 10px', color: '#6B6B67' }}>{c.ejecutiva || '—'}</td>
+                    <td style={{ padding: '4px 10px' }}>
+                      <span style={{ background: '#FFF3CD', color: '#856404', borderRadius: 20, padding: '1px 7px', fontWeight: 600, fontSize: 10 }}>{c.estado}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   )

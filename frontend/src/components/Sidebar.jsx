@@ -1,12 +1,15 @@
-import { BarChart2, MessageSquare, PhoneIncoming, Users, Settings, ChevronRight } from 'lucide-react'
+import { BarChart2, MessageSquare, PhoneIncoming, Users, Settings, ChevronRight, UploadCloud } from 'lucide-react'
+import { useNav } from '../context/NavContext'
 
 const NAV = [
-  { id: 'reclamos', label: 'Reclamos', icon: BarChart2, active: true },
+  { id: 'reclamos', label: 'Reclamos', icon: BarChart2 },
+  { id: 'cargas', label: 'Cargas', icon: UploadCloud },
   { id: 'inbound', label: 'Inbound', icon: PhoneIncoming, soon: true },
   { id: 'cx', label: 'CX', icon: MessageSquare, soon: true },
 ]
 
 export default function Sidebar() {
+  const { page, setPage } = useNav()
   return (
     <aside style={{
       position: 'fixed', top: 0, left: 0, bottom: 0,
@@ -38,7 +41,7 @@ export default function Sidebar() {
           Módulos
         </p>
         {NAV.map(item => (
-          <NavItem key={item.id} {...item} />
+          <NavItem key={item.id} {...item} active={page === item.id} onClick={() => !item.soon && setPage(item.id)} />
         ))}
 
         <p style={{ fontSize: 10, fontWeight: 600, color: '#4A4A46', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '16px 10px 8px' }}>
@@ -55,9 +58,9 @@ export default function Sidebar() {
   )
 }
 
-function NavItem({ id, label, icon: Icon, active, soon }) {
+function NavItem({ id, label, icon: Icon, active, soon, onClick }) {
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '8px 10px', borderRadius: 8, marginBottom: 2, cursor: soon ? 'default' : 'pointer',
       background: active ? 'rgba(168,213,194,0.12)' : 'transparent',
