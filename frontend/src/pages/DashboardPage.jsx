@@ -33,9 +33,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!casosCargados) {
       const { casos, casosAnterior, ventas } = generarDatosDummy()
-      setCasos(casos)
-      setCasosAnterior(casosAnterior)
-      setVentas(ventas)
+      setCasos(casos, 'datos de ejemplo (dummy)')
+      setCasosAnterior(casosAnterior, 'datos de ejemplo (dummy)')
+      setVentas(ventas, 'datos de ejemplo (dummy)')
     }
   }, [])
 

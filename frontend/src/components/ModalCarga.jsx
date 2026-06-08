@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { X, Upload, CheckCircle, AlertCircle, Download, AlertTriangle } from 'lucide-react'
+import { X, Upload, CheckCircle, AlertCircle, Download, AlertTriangle, History, ChevronDown, ChevronUp } from 'lucide-react'
 import { useData } from '../context/DataContext'
 import { parsearArchivoCasos, parsearArchivoVentas, generarPlantillaCasos, generarPlantillaVentas, detectarAdvertencias } from '../utils/fileParser'
 
 export default function ModalCarga({ onClose }) {
-  const { setCasos, setVentas } = useData()
+  const { setCasos, setVentas, logCargas } = useData()
+  const [verHistorial, setVerHistorial] = useState(false)
   const [statusCasos, setStatusCasos] = useState(null)
   const [statusVentas, setStatusVentas] = useState(null)
   const [errorCasos, setErrorCasos] = useState(null)
@@ -17,7 +18,7 @@ export default function ModalCarga({ onClose }) {
     setErrorCasos(null); setStatusCasos('loading')
     try {
       const data = await parsearArchivoCasos(file)
-      setCasos(data); setCountCasos(data.length); setStatusCasos('ok')
+      setCasos(data, file.name); setCountCasos(data.length); setStatusCasos('ok')
       setAdvertencias(detectarAdvertencias(data))
     } catch (e) { setStatusCasos(null); setErrorCasos(e.message) }
   }
@@ -26,7 +27,7 @@ export default function ModalCarga({ onClose }) {
     setErrorVentas(null); setStatusVentas('loading')
     try {
       const data = await parsearArchivoVentas(file)
-      setVentas(data); setCountVentas(data.length); setStatusVentas('ok')
+      setVentas(data, file.name); setCountVentas(data.length); setStatusVentas('ok')
     } catch (e) { setStatusVentas(null); setErrorVentas(e.message) }
   }
 
@@ -108,6 +109,35 @@ export default function ModalCarga({ onClose }) {
             </button>
           </div>
           <p style={{ fontSize: 10, color: '#B0B0AA' }}>Los archivos se procesan localmente — ningún dato se envía a internet.</p>
+
+          {/* Historial de cargas */}
+          <div>
+            <button onClick={() => setVerHistorial(v => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#6B6B67', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
+              <History size={12} />
+              Historial de cargas {logCargas.length > 0 && `(${logCargas.length})`}
+              {verHistorial ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+            {verHistorial && (
+              <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid #EBEBEB', borderRadius: 8, marginTop: 6 }}>
+                {logCargas.length === 0
+                  ? <p style={{ fontSize: 11, color: '#B0B0AA', padding: '10px 12px' }}>Sin cargas registradas todavía.</p>
+                  : logCargas.map((l, i) => (
+                    <div key={i} style={{ padding: '7px 12px', borderBottom: i < logCargas.length - 1 ? '1px solid #F5F5F3' : 'none', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <div>
+                        <p style={{ fontSize: 11, color: '#1C1C1A', fontWeight: 500 }}>
+                          {l.tipo === 'casos' ? 'Casos' : l.tipo === 'casos_anterior' ? 'Casos (periodo anterior)' : 'Ventas'}
+                          {l.detalle ? ` — ${l.detalle}` : ''}
+                        </p>
+                        <p style={{ fontSize: 10, color: '#9B9B96' }}>{new Date(l.fecha).toLocaleString('es-CL')}</p>
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#6B6B67', background: '#F5F5F3', borderRadius: 20, padding: '2px 8px', height: 'fit-content' }}>{l.cantidad} filas</span>
+                    </div>
+                  ))
+                }
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
